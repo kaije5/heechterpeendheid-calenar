@@ -31,6 +31,7 @@ export default function EventModal({
   const [isAllDay, setIsAllDay] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [dirty, setDirty] = useState(false);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -47,6 +48,7 @@ export default function EventModal({
       setIsAllDay(true);
     }
     setError('');
+    setDirty(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [event, members, currentMember?.id, isOpen]);
 
@@ -69,19 +71,25 @@ export default function EventModal({
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTitle(e.target.value);
+    setDirty(true);
   };
 
   const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setDescription(e.target.value);
+    setDirty(true);
   };
 
   const handleMemberChange = (id: string) => {
     setMemberId(id);
+    setDirty(true);
   };
 
   const handleAllDayChange = (checked: boolean) => {
     setIsAllDay(checked);
+    setDirty(true);
   };
+
+  const canSave = title.trim().length > 0 && dirty;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -152,7 +160,7 @@ export default function EventModal({
           <button
             onClick={onClose}
             disabled={loading}
-            className="p-2 hover:bg-gray-100 transition-colors"
+            className="p-2 hover:bg-paper-gray transition-colors"
             aria-label="Close modal"
           >
             <X className="w-5 h-5" />
@@ -176,11 +184,14 @@ export default function EventModal({
               type="text"
               value={title}
               onChange={handleTitleChange}
-              className="w-full border-4 border-ink p-3 bg-white font-mono text-sm focus:outline-none focus:shadow-[4px_4px_0_#0a0a0a] transition-shadow"
+              className="w-full border-4 border-ink p-3 bg-white font-mono text-sm focus:outline-none focus:shadow-[4px_4px_0_#0a0a0a] focus:border-ink transition-all"
               placeholder="Enter event title"
               required
               disabled={loading}
             />
+            {dirty && !title.trim() && (
+              <p className="text-xs text-red-600 mt-1 font-medium">Title is required</p>
+            )}
           </div>
 
           <div>
@@ -191,7 +202,7 @@ export default function EventModal({
             <textarea
               value={description}
               onChange={handleDescriptionChange}
-              className="w-full border-4 border-ink p-3 bg-white font-mono text-sm focus:outline-none focus:shadow-[4px_4px_0_#0a0a0a] transition-shadow resize-none"
+              className="w-full border-4 border-ink p-3 bg-white font-mono text-sm focus:outline-none focus:shadow-[4px_4px_0_#0a0a0a] focus:border-ink transition-all resize-none"
               placeholder="Add details..."
               rows={3}
               disabled={loading}
@@ -206,7 +217,7 @@ export default function EventModal({
             <select
               value={memberId}
               onChange={(e) => handleMemberChange(e.target.value)}
-              className="w-full border-4 border-ink p-3 bg-white font-mono text-sm focus:outline-none focus:shadow-[4px_4px_0_#0a0a0a] transition-shadow"
+              className="w-full border-4 border-ink p-3 bg-white font-mono text-sm focus:outline-none focus:shadow-[4px_4px_0_#0a0a0a] focus:border-ink transition-all"
               disabled={loading}
             >
               {members.map((member) => (
@@ -235,8 +246,10 @@ export default function EventModal({
           <div className="flex gap-3 pt-4">
             <button
               type="submit"
-              disabled={loading || !title.trim()}
-              className="brutal-button flex-1 bg-ink text-white disabled:opacity-50"
+              disabled={loading || !canSave}
+              className={`brutal-button flex-1 py-3 disabled:opacity-50 disabled:cursor-not-allowed ${
+                canSave && !loading ? 'bg-ink text-white' : 'bg-paper-gray text-ink'
+              }`}
             >
               {loading ? (
                 <>
@@ -253,7 +266,7 @@ export default function EventModal({
                 type="button"
                 onClick={handleDelete}
                 disabled={loading}
-                className="brutal-button bg-red-500 text-white"
+                className="brutal-button bg-red-600 text-white hover:bg-red-700"
                 aria-label="Delete event"
               >
                 <Trash2 className="w-4 h-4" />
@@ -262,7 +275,7 @@ export default function EventModal({
           </div>
         </form>
 
-        <p className="text-xs text-gray-500 mt-4 text-center">
+        <p className="text-xs text-ink-light mt-4 text-center">
           Press ESC to close
         </p>
       </div>

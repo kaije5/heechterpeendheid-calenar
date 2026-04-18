@@ -42,6 +42,12 @@ export default function Calendar({ members, currentMember }: CalendarProps) {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  // Animate in after mount for better perceived performance
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Calculate date range based on view mode
   const getDateRange = () => {
@@ -175,8 +181,8 @@ export default function Calendar({ members, currentMember }: CalendarProps) {
               <div
                 key={day.toISOString()}
                 onClick={() => handleDayClick(day)}
-                className={`calendar-day cursor-pointer ${today ? 'today' : ''} ${
-                  !currentMonth ? 'opacity-40' : ''
+                className={`calendar-day ${today ? 'today' : ''} ${
+                  !currentMonth ? 'other-month' : ''
                 }`}
               >
                 <span
@@ -198,7 +204,7 @@ export default function Calendar({ members, currentMember }: CalendarProps) {
                     </button>
                   ))}
                   {dayEvents.length > 3 && (
-                    <div className="text-xs font-bold text-ink-gray">
+                    <div className="text-xs font-bold text-ink-light">
                       +{dayEvents.length - 3} more
                     </div>
                   )}
@@ -223,7 +229,7 @@ export default function Calendar({ members, currentMember }: CalendarProps) {
               <div
                 key={day.toISOString()}
                 className={`text-center p-3 font-bold ${
-                  isToday(day) ? 'bg-ink text-white' : 'bg-gray-100'
+                  isToday(day) ? 'bg-ink text-white' : 'bg-paper-gray'
                 }`}
               >
                 <div className="text-sm uppercase">{format(day, 'EEE')}</div>
@@ -240,7 +246,7 @@ export default function Calendar({ members, currentMember }: CalendarProps) {
                 <div
                   key={day.toISOString()}
                   onClick={() => handleDayClick(day)}
-                  className="min-h-[200px] border-2 border-ink p-2 cursor-pointer hover:bg-gray-50"
+                  className="min-h-[200px] border-2 border-ink p-2 cursor-pointer hover:bg-paper-cream transition-colors"
                 >
                   <div className="space-y-1">
                     {dayEvents.map((event) => (
@@ -267,14 +273,14 @@ export default function Calendar({ members, currentMember }: CalendarProps) {
 
     return (
       <div className="max-w-2xl mx-auto">
-        <div className={`text-center p-4 mb-4 ${isToday(currentDate) ? 'bg-ink text-white' : 'bg-gray-100'}`}>
+        <div className={`text-center p-4 mb-4 ${isToday(currentDate) ? 'bg-ink text-white' : 'bg-paper-gray'}`}>
           <h2 className="text-2xl font-bold">{format(currentDate, 'EEEE')}</h2>
           <p className="text-xl">{format(currentDate, 'MMMM d, yyyy')}</p>
         </div>
 
         <div className="space-y-2">
           {dayEvents.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
+            <div className="text-center py-12 text-ink-light">
               <p className="font-mono">No events scheduled</p>
               <p className="text-sm mt-2">Click to add an event</p>
             </div>
@@ -314,8 +320,9 @@ export default function Calendar({ members, currentMember }: CalendarProps) {
   }
 
   return (
-    <div className="w-full max-w-6xl mx-auto p-4">
+    <div className={`w-full max-w-6xl mx-auto p-4 transition-opacity duration-300 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
       <SyncStatusIndicator />
+      
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div className="tape transition-transform hover:scale-[1.02] duration-200">
@@ -339,7 +346,7 @@ export default function Calendar({ members, currentMember }: CalendarProps) {
               >
                 <span className="flex items-center gap-1">
                   {mode === 'month' && <CalendarDays className="w-4 h-4" />}
-                  {mode}
+                  <span className="hidden sm:inline">{mode}</span>
                 </span>
               </button>
             ))}
