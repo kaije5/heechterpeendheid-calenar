@@ -36,6 +36,17 @@ export default function RootLayout({
     <html lang="en" className={`${spaceMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-[#f5f3ef]">
         {children}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                  navigator.serviceWorker.register('/sw.js');
+                });
+              }
+            `,
+          }}
+        />
       </body>
     </html>
   );
