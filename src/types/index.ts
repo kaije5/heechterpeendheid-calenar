@@ -28,6 +28,6 @@ export interface CreateEventInput {
   member_id: string;
 }
 
-export interface UpdateEventInput extends Partial<CreateEventInput> {}
+export type UpdateEventInput = Partial<CreateEventInput>;
 
 export type ViewMode = 'month' | 'week' | 'day';

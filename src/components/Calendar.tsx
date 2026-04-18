@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import {
   format,
   startOfMonth,
@@ -26,6 +26,7 @@ import { getEvents } from '@/lib/supabase';
 import EventModal from './EventModal';
 import LoadingSpinner from './LoadingSpinner';
 import Toast, { ToastType } from './Toast';
+import { SyncStatusIndicator, SyncBadge } from './SyncStatusIndicator';
 
 interface CalendarProps {
   members: HouseholdMember[];
@@ -65,23 +66,30 @@ export default function Calendar({ members, currentMember }: CalendarProps) {
   const days = eachDayOfInterval({ start: dateRange.start, end: dateRange.end });
   const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-  const loadEvents = useCallback(async () => {
-    setLoading(true);
-    try {
-      const start = format(dateRange.start, 'yyyy-MM-dd');
-      const end = format(dateRange.end, 'yyyy-MM-dd');
-      const data = await getEvents(start, end);
-      setEvents(data);
-    } catch (error) {
-      setToast({ message: 'Failed to load events. Please try again.', type: 'error' });
-    } finally {
-      setLoading(false);
-    }
-  }, [dateRange]);
-
   useEffect(() => {
+    let cancelled = false;
+    async function loadEvents() {
+      setLoading(true);
+      try {
+        const start = format(dateRange.start, 'yyyy-MM-dd');
+        const end = format(dateRange.end, 'yyyy-MM-dd');
+        const data = await getEvents(start, end);
+        if (!cancelled) {
+          setEvents(data);
+        }
+      } catch {
+        if (!cancelled) {
+          setToast({ message: 'Failed to load events. Please try again.', type: 'error' });
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
     loadEvents();
-  }, [loadEvents]);
+    return () => { cancelled = true; };
+  }, [dateRange.start, dateRange.end]);
 
   function getEventsForDay(day: Date): CalendarEvent[] {
     return events.filter((event) => isSameDay(new Date(event.start_date), day));
@@ -314,6 +322,7 @@ export default function Calendar({ members, currentMember }: CalendarProps) {
 
   return (
     <div className="w-full max-w-6xl mx-auto p-4">
+      <SyncStatusIndicator />
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div className="tape transition-transform hover:scale-[1.02] duration-200">
@@ -381,25 +390,28 @@ export default function Calendar({ members, currentMember }: CalendarProps) {
 
       {/* Member Legend */}
       {members.length > 0 ? (
-        <div className="flex flex-wrap items-center gap-4 mb-6 p-4 border-4 border-ink bg-paper-cream">
-          <div className="flex items-center gap-2 text-sm font-bold text-ink-gray">
-            <Users className="w-4 h-4" />
-            <span className="uppercase">Household:</span>
-          </div>
-          {members.map((member) => (
-            <div key={member.id} className="flex items-center gap-2">
-              <div
-                className={`w-4 h-4 border-2 border-ink shadow-[1px_1px_0_#0a0a0a] ${
-                  member.color === 'member-1'
-                    ? 'bg-member-1'
-                    : member.color === 'member-2'
-                    ? 'bg-member-2'
-                    : 'bg-member-3'
-                }`}
-              />
-              <span className="text-sm font-bold uppercase">{member.name}</span>
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-6 p-4 border-4 border-ink bg-paper-cream">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2 text-sm font-bold text-ink-gray">
+              <Users className="w-4 h-4" />
+              <span className="uppercase">Household:</span>
             </div>
-          ))}
+            {members.map((member) => (
+              <div key={member.id} className="flex items-center gap-2">
+                <div
+                  className={`w-4 h-4 border-2 border-ink shadow-[1px_1px_0_#0a0a0a] ${
+                    member.color === 'member-1'
+                      ? 'bg-member-1'
+                      : member.color === 'member-2'
+                      ? 'bg-member-2'
+                      : 'bg-member-3'
+                  }`}
+                />
+                <span className="text-sm font-bold uppercase">{member.name}</span>
+              </div>
+            ))}
+          </div>
+          <SyncBadge />
         </div>
       ) : (
         <div className="flex items-center gap-3 p-4 mb-6 border-4 border-amber-500 bg-amber-50 text-amber-800">
