@@ -17,16 +17,10 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const { error: authError } = await signIn(email.trim(), password);
-
-      if (authError) {
-        setError(authError.message || 'Login failed');
-        return;
-      }
-
+      await signIn(email.trim(), password);
       router.push('/');
-    } catch (err) {
-      setError('Login failed. Please check your credentials.');
+    } catch (err: any) {
+      setError(err.message || 'Login failed. Please check your credentials.');
     } finally {
       setLoading(false);
     }

@@ -22,9 +22,9 @@ export const supabase = getSupabase();
 
 // Mock data for development without Supabase
 const mockMembers: HouseholdMember[] = [
-  { id: '1', name: 'Member 1', email: 'm1@household.local', username: 'member1', color: 'member-1', created_at: new Date().toISOString() },
-  { id: '2', name: 'Member 2', email: 'm2@household.local', username: 'member2', color: 'member-2', created_at: new Date().toISOString() },
-  { id: '3', name: 'Member 3', email: 'm3@household.local', username: 'member3', color: 'member-3', created_at: new Date().toISOString() },
+  { id: '1', name: 'Member 1', email: 'm1@household.local', color: 'member-1', created_at: new Date().toISOString() },
+  { id: '2', name: 'Member 2', email: 'm2@household.local', color: 'member-2', created_at: new Date().toISOString() },
+  { id: '3', name: 'Member 3', email: 'm3@household.local', color: 'member-3', created_at: new Date().toISOString() },
 ];
 
 const mockEvents: CalendarEvent[] = [];
