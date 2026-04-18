@@ -1,0 +1,187 @@
+@import "tailwindcss";
+
+:root {
+  /* Neo-brutalist paper texture palette */
+  --paper-white: #f5f3ef;
+  --paper-cream: #faf8f3;
+  --paper-gray: #e8e4dc;
+
+  /* Primary bold colors */
+  --primary-red: #ff2d2d;
+  --primary-blue: #0066ff;
+  --primary-yellow: #ffd700;
+
+  /* Member colors */
+  --member-1: #ff2d2d;
+  --member-2: #0066ff;
+  --member-3: #00cc66;
+
+  /* Black and text */
+  --ink-black: #0a0a0a;
+  --ink-gray: #4a4a4a;
+
+  /* Border weights */
+  --border-thin: 2px;
+  --border-thick: 4px;
+  --border-heavy: 6px;
+}
+
+@theme inline {
+  --color-paper: var(--paper-white);
+  --color-paper-cream: var(--paper-cream);
+  --color-paper-gray: var(--paper-gray);
+  --color-primary-red: var(--primary-red);
+  --color-primary-blue: var(--primary-blue);
+  --color-primary-yellow: var(--primary-yellow);
+  --color-member-1: var(--member-1);
+  --color-member-2: var(--member-2);
+  --color-member-3: var(--member-3);
+  --color-ink: var(--ink-black);
+  --color-ink-gray: var(--ink-gray);
+}
+
+/* Paper texture background */
+body {
+  background-color: var(--paper-white);
+  color: var(--ink-black);
+  font-family: var(--font-mono), 'Courier New', monospace;
+  background-image:
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  background-blend-mode: multiply;
+  min-height: 100vh;
+}
+
+/* Neo-brutalist button */
+.brutal-button {
+  background: var(--paper-white);
+  border: var(--border-thick) solid var(--ink-black);
+  padding: 12px 24px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: var(--border-thin) var(--border-thin) 0 var(--ink-black);
+  transition: all 0.1s ease;
+  cursor: pointer;
+}
+
+.brutal-button:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--ink-black);
+}
+
+.brutal-button:active {
+  transform: translate(0, 0);
+  box-shadow: var(--border-thin) var(--border-thin) 0 var(--ink-black);
+}
+
+/* Neo-brutalist card */
+.brutal-card {
+  background: var(--paper-white);
+  border: var(--border-thick) solid var(--ink-black);
+  box-shadow: 8px 8px 0 var(--ink-black);
+}
+
+/* Torn paper effect */
+.torn-edge {
+  position: relative;
+}
+
+.torn-edge::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 0;
+  right: 0;
+  height: 10px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 10'%3E%3Cpath d='M0 0 Q5 10 10 0 Q15 10 20 0 Q25 10 30 0 Q35 10 40 0 Q45 10 50 0 Q55 10 60 0 Q65 10 70 0 Q75 10 80 0 Q85 10 90 0 Q95 10 100 0' fill='none' stroke='%230a0a0a' stroke-width='1'/%3E%3C/svg%3E") repeat-x;
+}
+
+/* Calendar grid */
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  border: var(--border-thick) solid var(--ink-black);
+  background: var(--ink-black);
+}
+
+.calendar-day {
+  background: var(--paper-white);
+  aspect-ratio: 1;
+  padding: 8px;
+  position: relative;
+  min-height: 100px;
+}
+
+.calendar-day:hover {
+  background: var(--paper-cream);
+}
+
+.calendar-day.today {
+  background: var(--primary-yellow);
+}
+
+/* Event chips */
+.event-chip {
+  display: block;
+  padding: 2px 6px;
+  margin: 2px 0;
+  font-size: 11px;
+  font-weight: 600;
+  border: 2px solid var(--ink-black);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.event-chip.member-1 { background: var(--member-1); color: white; }
+.event-chip.member-2 { background: var(--member-2); color: white; }
+.event-chip.member-3 { background: var(--member-3); color: white; }
+
+/* Sticky tape effect */
+.tape {
+  position: relative;
+}
+
+.tape::before {
+  content: '';
+  position: absolute;
+  top: -15px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-2deg);
+  width: 80px;
+  height: 30px;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Section divider */
+.section-divider {
+  border: none;
+  height: var(--border-thick);
+  background: var(--ink-black);
+  margin: 24px 0;
+}
+
+/* Typography */
+.brutal-heading {
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+/* Mobile optimizations */
+@media (max-width: 640px) {
+  .calendar-day {
+    min-height: 60px;
+    padding: 4px;
+  }
+
+  .event-chip {
+    font-size: 9px;
+    padding: 1px 2px;
+    border-width: 1px;
+  }
+}
