@@ -2,14 +2,20 @@
 
 ## CI/CD Pipeline
 
-The pipeline runs on every push to main and pull requests:
+Complete pipeline runs on every push to main:
+
+```
+PR:     lint → test
+MAIN:   lint → test → build → e2e → migrate → deploy
+```
 
 ### Stages:
-1. **Lint** - ESLint checks
-2. **Test** - Jest unit tests with coverage
-3. **Build** - Docker image build and push to GitHub Container Registry
-4. **E2E** - Playwright end-to-end tests
-5. **Deploy** - Deploy to Vercel
+1. **Lint** - ESLint checks (PR + main)
+2. **Test** - Jest unit tests with coverage (PR + main)
+3. **Build** - Docker image → GitHub Container Registry (main only)
+4. **E2E** - Playwright matrix (chromium, firefox, webkit, mobile-chrome) (main only)
+5. **Migrate** - Supabase database migrations (main only)
+6. **Deploy** - Vercel production deployment (main only)
 
 ### Required GitHub Secrets
 
@@ -28,6 +34,10 @@ Built images are pushed to GitHub Container Registry:
 - `ghcr.io/kaije5/heechterpeendheid-calenar:<sha>`
 
 ## Database Migrations
+
+Migrations run automatically after E2E tests pass and before deployment.
+
+### First-time setup:
 
 Migrations automatically apply on push to main when files in `supabase/migrations/` change.
 

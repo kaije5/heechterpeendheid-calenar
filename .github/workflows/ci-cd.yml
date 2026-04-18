@@ -89,8 +89,27 @@ jobs:
     steps:
       - run: echo "All E2E matrix jobs passed"
 
+  migrate:
+    needs: e2e-status
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Link Supabase project
+        run: supabase link --project-ref $SUPABASE_PROJECT_ID
+      - name: Push migrations
+        run: supabase db push
+      - name: Verify migrations
+        run: supabase migration list
+
   deploy:
-    needs: [build, e2e-status]
+    needs: [build, migrate]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     environment: production
