@@ -22,9 +22,9 @@ export const supabase = getSupabase();
 
 // Mock data for development without Supabase
 const mockMembers: HouseholdMember[] = [
-  { id: '1', name: 'Member 1', email: 'm1@household.local', color: 'member-1', created_at: new Date().toISOString() },
-  { id: '2', name: 'Member 2', email: 'm2@household.local', color: 'member-2', created_at: new Date().toISOString() },
-  { id: '3', name: 'Member 3', email: 'm3@household.local', color: 'member-3', created_at: new Date().toISOString() },
+  { id: '1', name: 'Member 1', email: 'm1@household.local', username: 'member1', color: 'member-1', created_at: new Date().toISOString() },
+  { id: '2', name: 'Member 2', email: 'm2@household.local', username: 'member2', color: 'member-2', created_at: new Date().toISOString() },
+  { id: '3', name: 'Member 3', email: 'm3@household.local', username: 'member3', color: 'member-3', created_at: new Date().toISOString() },
 ];
 
 const mockEvents: CalendarEvent[] = [];
@@ -147,28 +147,25 @@ export async function getMemberById(id: string): Promise<HouseholdMember | null>
 }
 
 // Auth
-export async function signInWithEmail(email: string) {
+export async function signIn(username: string, password: string) {
   if (!isSupabaseConfigured()) {
     throw new Error('Auth requires Supabase configuration');
   }
-  const origin = typeof window !== 'undefined' ? window.location.origin : '';
-  const { data, error } = await getSupabase().auth.signInWithOtp({
-    email,
-    options: {
-      emailRedirectTo: `${origin}/auth/callback`,
-    },
+  const { data, error } = await getSupabase().auth.signInWithPassword({
+    email: username.trim(),
+    password,
   });
 
   if (error) throw error;
   return data;
 }
 
-export async function signUpWithEmail(email: string, password: string) {
+export async function signUp(username: string, password: string) {
   if (!isSupabaseConfigured()) {
     throw new Error('Auth requires Supabase configuration');
   }
   const { data, error } = await getSupabase().auth.signUp({
-    email,
+    email: username.trim(),
     password,
   });
 

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Calendar from '@/components/Calendar';
 import AuthButton from '@/components/AuthButton';
-import { getMembers, getCurrentUser, getCurrentMember } from '@/lib/supabase';
+import { getMembers, getCurrentMember } from '@/lib/supabase';
 import { HouseholdMember } from '@/types';
 
 export default function Home() {

@@ -31,7 +31,6 @@ export default function EventModal({
   const [isAllDay, setIsAllDay] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [isDirty, setIsDirty] = useState(false);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -47,9 +46,9 @@ export default function EventModal({
       setMemberId(currentMember?.id || members[0]?.id || '');
       setIsAllDay(true);
     }
-    setIsDirty(false);
     setError('');
-  }, [event, members, currentMember, isOpen]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [event, members, currentMember?.id, isOpen]);
 
   useEffect(() => {
     if (isOpen && titleInputRef.current) {
@@ -70,22 +69,18 @@ export default function EventModal({
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTitle(e.target.value);
-    setIsDirty(true);
   };
 
   const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setDescription(e.target.value);
-    setIsDirty(true);
   };
 
   const handleMemberChange = (id: string) => {
     setMemberId(id);
-    setIsDirty(true);
   };
 
   const handleAllDayChange = (checked: boolean) => {
     setIsAllDay(checked);
-    setIsDirty(true);
   };
 
   async function handleSubmit(e: React.FormEvent) {
@@ -114,9 +109,8 @@ export default function EventModal({
 
       onClose();
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to save event';
-      setError(message);
-      onToast?.(message, 'error');
+      setError('Failed to save event. Please try again.');
+      console.error('Event save error:', err);
     } finally {
       setLoading(false);
     }
@@ -131,58 +125,49 @@ export default function EventModal({
       onToast?.('Event deleted successfully', 'success');
       onClose();
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to delete event';
-      setError(message);
-      onToast?.(message, 'error');
+      setError('Failed to delete event. Please try again.');
+      console.error('Event delete error:', err);
     } finally {
       setLoading(false);
     }
   }
 
-  if (!isOpen || !selectedDate) return null;
-
-  const handleBackdropClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget && !loading) {
-      onClose();
-    }
-  };
+  if (!isOpen) return null;
 
   return (
     <div
       ref={modalRef}
-      onClick={handleBackdropClick}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-in fade-in duration-200"
+      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+      onClick={(e) => {
+        if (e.target === modalRef.current) {
+          onClose();
+        }
+      }}
     >
-      <div className="brutal-card w-full max-w-md p-6 relative animate-in zoom-in-95 duration-200">
-        {/* Close button */}
-        <button
-          onClick={onClose}
-          disabled={loading}
-          className="absolute top-4 right-4 brutal-button !p-2 disabled:opacity-50"
-          aria-label="Close modal"
-        >
-          <X className="w-5 h-5" />
-        </button>
-
-        <h2 className="brutal-heading text-2xl mb-2">
-          {event ? 'Edit Event' : 'New Event'}
-        </h2>
-
-        <div className="flex items-center gap-2 text-sm font-bold mb-6 uppercase text-ink-gray">
-          <CalendarDays className="w-4 h-4" />
-          {format(selectedDate, 'EEEE, MMMM d, yyyy')}
+      <div className="brutal-card bg-white w-full max-w-md animate-in zoom-in-95">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-black uppercase tracking-tight">
+            {event ? 'Edit Event' : 'New Event'}
+          </h2>
+          <button
+            onClick={onClose}
+            disabled={loading}
+            className="p-2 hover:bg-gray-100 transition-colors"
+            aria-label="Close modal"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         {error && (
-          <div className="bg-red-100 border-4 border-red-600 text-red-800 p-3 mb-4 font-bold flex items-center gap-2 animate-in slide-in-from-top-2">
-            <span className="text-lg">⚠</span>
+          <div className="mb-4 p-3 bg-red-100 border-4 border-red-600 text-red-800 text-sm font-bold">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="flex items-center gap-2 text-sm font-bold uppercase mb-2">
+            <label className="flex items-center gap-2 text-sm font-bold mb-2">
               <CalendarDays className="w-4 h-4" />
               Title *
             </label>
@@ -191,71 +176,57 @@ export default function EventModal({
               type="text"
               value={title}
               onChange={handleTitleChange}
-              className="w-full border-4 border-ink p-3 bg-white font-mono text-base focus:outline-none focus:shadow-[4px_4px_0_#0a0a0a] transition-shadow"
-              placeholder="Event title"
+              className="w-full border-4 border-ink p-3 bg-white font-mono text-sm focus:outline-none focus:shadow-[4px_4px_0_#0a0a0a] transition-shadow"
+              placeholder="Enter event title"
               required
               disabled={loading}
             />
           </div>
 
           <div>
-            <label className="flex items-center gap-2 text-sm font-bold uppercase mb-2">
+            <label className="flex items-center gap-2 text-sm font-bold mb-2">
               <AlignLeft className="w-4 h-4" />
               Description
             </label>
             <textarea
               value={description}
               onChange={handleDescriptionChange}
-              className="w-full border-4 border-ink p-3 bg-white font-mono text-base focus:outline-none focus:shadow-[4px_4px_0_#0a0a0a] resize-none transition-shadow"
-              rows={3}
+              className="w-full border-4 border-ink p-3 bg-white font-mono text-sm focus:outline-none focus:shadow-[4px_4px_0_#0a0a0a] transition-shadow resize-none"
               placeholder="Add details..."
+              rows={3}
               disabled={loading}
             />
           </div>
 
           <div>
-            <label className="flex items-center gap-2 text-sm font-bold uppercase mb-3">
+            <label className="flex items-center gap-2 text-sm font-bold mb-2">
               <User className="w-4 h-4" />
-              Who *
+              Assigned to
             </label>
-            <div className="flex flex-wrap gap-2">
+            <select
+              value={memberId}
+              onChange={(e) => handleMemberChange(e.target.value)}
+              className="w-full border-4 border-ink p-3 bg-white font-mono text-sm focus:outline-none focus:shadow-[4px_4px_0_#0a0a0a] transition-shadow"
+              disabled={loading}
+            >
               {members.map((member) => (
-                <button
-                  key={member.id}
-                  type="button"
-                  onClick={() => handleMemberChange(member.id)}
-                  disabled={loading}
-                  className={`brutal-button text-sm transition-all ${
-                    memberId === member.id
-                      ? 'bg-primary-yellow shadow-[4px_4px_0_#0a0a0a]'
-                      : 'bg-white opacity-70 hover:opacity-100'
-                  }`}
-                >
-                  <span
-                    className={`inline-block w-3 h-3 mr-2 border-2 border-ink ${
-                      member.color === 'member-1'
-                        ? 'bg-member-1'
-                        : member.color === 'member-2'
-                        ? 'bg-member-2'
-                        : 'bg-member-3'
-                    }`}
-                  />
+                <option key={member.id} value={member.id}>
                   {member.name}
-                </button>
+                </option>
               ))}
-            </div>
+            </select>
           </div>
 
-          <div className="flex items-center gap-3 p-3 border-4 border-ink bg-paper-gray">
+          <div className="flex items-center gap-3">
             <input
               type="checkbox"
-              id="allDay"
+              id="isAllDay"
               checked={isAllDay}
               onChange={(e) => handleAllDayChange(e.target.checked)}
+              className="w-5 h-5 border-4 border-ink"
               disabled={loading}
-              className="w-5 h-5 border-4 border-ink accent-primary-yellow cursor-pointer"
             />
-            <label htmlFor="allDay" className="font-bold uppercase text-sm cursor-pointer flex items-center gap-2">
+            <label htmlFor="isAllDay" className="flex items-center gap-2 text-sm font-bold cursor-pointer">
               <Clock className="w-4 h-4" />
               All day event
             </label>
@@ -265,10 +236,16 @@ export default function EventModal({
             <button
               type="submit"
               disabled={loading || !title.trim()}
-              className="brutal-button flex-1 bg-primary-blue text-white disabled:opacity-50 flex items-center justify-center gap-2"
+              className="brutal-button flex-1 bg-ink text-white disabled:opacity-50"
             >
-              {loading && <Loader2 className="w-5 h-5 animate-spin" />}
-              {loading ? 'Saving...' : event ? 'Update' : 'Create'}
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save Event'
+              )}
             </button>
 
             {event && (
@@ -276,24 +253,18 @@ export default function EventModal({
                 type="button"
                 onClick={handleDelete}
                 disabled={loading}
-                className="brutal-button bg-primary-red text-white flex items-center gap-2"
+                className="brutal-button bg-red-500 text-white"
+                aria-label="Delete event"
               >
-                {loading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <>
-                    <Trash2 className="w-5 h-5" />
-                    <span className="hidden sm:inline">Delete</span>
-                  </>
-                )}
+                <Trash2 className="w-4 h-4" />
               </button>
             )}
           </div>
-
-          <p className="text-xs text-ink-gray text-center pt-2">
-            Press ESC to close
-          </p>
         </form>
+
+        <p className="text-xs text-gray-500 mt-4 text-center">
+          Press ESC to close
+        </p>
       </div>
     </div>
   );

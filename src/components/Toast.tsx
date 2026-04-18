@@ -15,6 +15,7 @@ interface ToastProps {
 export default function Toast({ message, type, onClose, duration = 5000 }: ToastProps) {
   const [isVisible, setIsVisible] = useState(false);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     setIsVisible(true);
     const timer = setTimeout(() => {
