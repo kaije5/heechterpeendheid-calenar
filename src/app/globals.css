@@ -172,6 +172,37 @@ body {
   line-height: 1;
 }
 
+/* Focus visible styles for accessibility */
+:focus-visible {
+  outline: 4px solid var(--primary-blue);
+  outline-offset: 2px;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--paper-gray);
+  border: 2px solid var(--ink-black);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--ink-black);
+  border: 2px solid var(--paper-white);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-gray);
+}
+
 /* Mobile optimizations */
 @media (max-width: 640px) {
   .calendar-day {

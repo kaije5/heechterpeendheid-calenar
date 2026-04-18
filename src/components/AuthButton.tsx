@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Mail } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Mail, Loader2 } from 'lucide-react';
 import { getCurrentUser, signInWithEmail, signOut } from '@/lib/supabase';
 
 interface AuthButtonProps {
@@ -14,10 +14,18 @@ export default function AuthButton({ onAuthChange }: AuthButtonProps) {
   const [email, setEmail] = useState('');
   const [showInput, setShowInput] = useState(false);
   const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState<'success' | 'error'>('success');
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     checkUser();
   }, []);
+
+  useEffect(() => {
+    if (showInput && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [showInput]);
 
   async function checkUser() {
     const currentUser = await getCurrentUser();
@@ -32,11 +40,12 @@ export default function AuthButton({ onAuthChange }: AuthButtonProps) {
     setMessage('');
     try {
       await signInWithEmail(email.trim());
+      setMessageType('success');
       setMessage('Check your email for the magic link!');
       setEmail('');
-      setShowInput(false);
     } catch (error) {
       console.error('Sign in error:', error);
+      setMessageType('error');
       setMessage('Failed to send magic link. Make sure Supabase is configured.');
     } finally {
       setLoading(false);
@@ -63,41 +72,64 @@ export default function AuthButton({ onAuthChange }: AuthButtonProps) {
         disabled={loading}
         className="brutal-button flex items-center gap-2 text-sm"
       >
-        {loading ? '...' : 'Sign Out'}
+        {loading ? (
+          <>
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Signing out...
+          </>
+        ) : (
+          'Sign Out'
+        )}
       </button>
     );
   }
 
   if (showInput) {
     return (
-      <form onSubmit={handleSignIn} className="flex flex-col gap-2">
+      <form onSubmit={handleSignIn} className="flex flex-col gap-2 animate-in slide-in-from-top-2">
         <div className="flex gap-2">
           <input
+            ref={inputRef}
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="your@email.com"
-            className="border-4 border-ink p-2 bg-white font-mono text-sm w-48"
+            className="border-4 border-ink p-2 bg-white font-mono text-sm w-48 focus:outline-none focus:shadow-[4px_4px_0_#0a0a0a] transition-shadow"
             required
+            disabled={loading}
           />
           <button
             type="submit"
-            disabled={loading}
-            className="brutal-button flex items-center gap-2 bg-ink text-white text-sm"
+            disabled={loading || !email.trim()}
+            className="brutal-button flex items-center gap-2 bg-ink text-white text-sm disabled:opacity-50"
           >
-            <Mail className="w-4 h-4" />
-            {loading ? '...' : 'Send'}
+            {loading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Mail className="w-4 h-4" />
+            )}
+            {loading ? 'Sending...' : 'Send'}
           </button>
           <button
             type="button"
-            onClick={() => setShowInput(false)}
-            className="brutal-button text-sm"
+            onClick={() => {
+              setShowInput(false);
+              setMessage('');
+            }}
+            disabled={loading}
+            className="brutal-button text-sm disabled:opacity-50"
           >
             Cancel
           </button>
         </div>
         {message && (
-          <p className="text-xs font-bold text-ink">{message}</p>
+          <div className={`text-xs font-bold px-3 py-2 border-4 ${
+            messageType === 'success'
+              ? 'bg-green-100 border-green-600 text-green-800'
+              : 'bg-red-100 border-red-600 text-red-800'
+          }`}>
+            {message}
+          </div>
         )}
       </form>
     );

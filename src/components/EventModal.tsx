@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { format } from 'date-fns';
-import { X, Trash2 } from 'lucide-react';
+import { X, Trash2, Loader2, CalendarDays, Clock, User, AlignLeft } from 'lucide-react';
 import { CalendarEvent, HouseholdMember } from '@/types';
 import { createEvent, updateEvent, deleteEvent } from '@/lib/supabase';
 
@@ -31,6 +31,9 @@ export default function EventModal({
   const [isAllDay, setIsAllDay] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isDirty, setIsDirty] = useState(false);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (event) {
@@ -44,7 +47,46 @@ export default function EventModal({
       setMemberId(currentMember?.id || members[0]?.id || '');
       setIsAllDay(true);
     }
-  }, [event, members, currentMember]);
+    setIsDirty(false);
+    setError('');
+  }, [event, members, currentMember, isOpen]);
+
+  useEffect(() => {
+    if (isOpen && titleInputRef.current) {
+      titleInputRef.current.focus();
+    }
+  }, [isOpen]);
+
+  const handleEscape = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape' && !loading) {
+      onClose();
+    }
+  }, [onClose, loading]);
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [handleEscape]);
+
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTitle(e.target.value);
+    setIsDirty(true);
+  };
+
+  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setDescription(e.target.value);
+    setIsDirty(true);
+  };
+
+  const handleMemberChange = (id: string) => {
+    setMemberId(id);
+    setIsDirty(true);
+  };
+
+  const handleAllDayChange = (checked: boolean) => {
+    setIsAllDay(checked);
+    setIsDirty(true);
+  };
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -99,61 +141,81 @@ export default function EventModal({
 
   if (!isOpen || !selectedDate) return null;
 
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget && !loading) {
+      onClose();
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="brutal-card w-full max-w-md p-6 relative">
+    <div
+      ref={modalRef}
+      onClick={handleBackdropClick}
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-in fade-in duration-200"
+    >
+      <div className="brutal-card w-full max-w-md p-6 relative animate-in zoom-in-95 duration-200">
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 brutal-button !p-2"
+          disabled={loading}
+          className="absolute top-4 right-4 brutal-button !p-2 disabled:opacity-50"
+          aria-label="Close modal"
         >
           <X className="w-5 h-5" />
         </button>
 
-        <h2 className="brutal-heading text-2xl mb-6">
+        <h2 className="brutal-heading text-2xl mb-2">
           {event ? 'Edit Event' : 'New Event'}
         </h2>
 
-        <div className="text-sm font-bold mb-4 uppercase">
+        <div className="flex items-center gap-2 text-sm font-bold mb-6 uppercase text-ink-gray">
+          <CalendarDays className="w-4 h-4" />
           {format(selectedDate, 'EEEE, MMMM d, yyyy')}
         </div>
 
         {error && (
-          <div className="bg-primary-red text-white p-3 mb-4 border-2 border-ink font-bold">
+          <div className="bg-red-100 border-4 border-red-600 text-red-800 p-3 mb-4 font-bold flex items-center gap-2 animate-in slide-in-from-top-2">
+            <span className="text-lg">⚠</span>
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-bold uppercase mb-2">
+            <label className="flex items-center gap-2 text-sm font-bold uppercase mb-2">
+              <CalendarDays className="w-4 h-4" />
               Title *
             </label>
             <input
+              ref={titleInputRef}
               type="text"
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full border-4 border-ink p-3 bg-white font-mono text-base focus:outline-none focus:shadow-[4px_4px_0_#0a0a0a]"
+              onChange={handleTitleChange}
+              className="w-full border-4 border-ink p-3 bg-white font-mono text-base focus:outline-none focus:shadow-[4px_4px_0_#0a0a0a] transition-shadow"
               placeholder="Event title"
               required
+              disabled={loading}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-bold uppercase mb-2">
+            <label className="flex items-center gap-2 text-sm font-bold uppercase mb-2">
+              <AlignLeft className="w-4 h-4" />
               Description
             </label>
             <textarea
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full border-4 border-ink p-3 bg-white font-mono text-base focus:outline-none focus:shadow-[4px_4px_0_#0a0a0a] resize-none"
+              onChange={handleDescriptionChange}
+              className="w-full border-4 border-ink p-3 bg-white font-mono text-base focus:outline-none focus:shadow-[4px_4px_0_#0a0a0a] resize-none transition-shadow"
               rows={3}
               placeholder="Add details..."
+              disabled={loading}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-bold uppercase mb-2">
+            <label className="flex items-center gap-2 text-sm font-bold uppercase mb-3">
+              <User className="w-4 h-4" />
               Who *
             </label>
             <div className="flex flex-wrap gap-2">
@@ -161,11 +223,12 @@ export default function EventModal({
                 <button
                   key={member.id}
                   type="button"
-                  onClick={() => setMemberId(member.id)}
-                  className={`brutal-button text-sm ${
+                  onClick={() => handleMemberChange(member.id)}
+                  disabled={loading}
+                  className={`brutal-button text-sm transition-all ${
                     memberId === member.id
-                      ? 'bg-primary-yellow'
-                      : 'bg-white'
+                      ? 'bg-primary-yellow shadow-[4px_4px_0_#0a0a0a]'
+                      : 'bg-white opacity-70 hover:opacity-100'
                   }`}
                 >
                   <span
@@ -183,15 +246,17 @@ export default function EventModal({
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 p-3 border-4 border-ink bg-paper-gray">
             <input
               type="checkbox"
               id="allDay"
               checked={isAllDay}
-              onChange={(e) => setIsAllDay(e.target.checked)}
-              className="w-5 h-5 border-4 border-ink accent-primary-yellow"
+              onChange={(e) => handleAllDayChange(e.target.checked)}
+              disabled={loading}
+              className="w-5 h-5 border-4 border-ink accent-primary-yellow cursor-pointer"
             />
-            <label htmlFor="allDay" className="font-bold uppercase text-sm">
+            <label htmlFor="allDay" className="font-bold uppercase text-sm cursor-pointer flex items-center gap-2">
+              <Clock className="w-4 h-4" />
               All day event
             </label>
           </div>
@@ -200,8 +265,9 @@ export default function EventModal({
             <button
               type="submit"
               disabled={loading || !title.trim()}
-              className="brutal-button flex-1 bg-primary-blue text-white disabled:opacity-50"
+              className="brutal-button flex-1 bg-primary-blue text-white disabled:opacity-50 flex items-center justify-center gap-2"
             >
+              {loading && <Loader2 className="w-5 h-5 animate-spin" />}
               {loading ? 'Saving...' : event ? 'Update' : 'Create'}
             </button>
 
@@ -210,12 +276,23 @@ export default function EventModal({
                 type="button"
                 onClick={handleDelete}
                 disabled={loading}
-                className="brutal-button bg-primary-red text-white"
+                className="brutal-button bg-primary-red text-white flex items-center gap-2"
               >
-                <Trash2 className="w-5 h-5" />
+                {loading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <>
+                    <Trash2 className="w-5 h-5" />
+                    <span className="hidden sm:inline">Delete</span>
+                  </>
+                )}
               </button>
             )}
           </div>
+
+          <p className="text-xs text-ink-gray text-center pt-2">
+            Press ESC to close
+          </p>
         </form>
       </div>
     </div>

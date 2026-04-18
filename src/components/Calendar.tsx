@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   format,
   startOfMonth,
@@ -20,7 +20,7 @@ import {
   addDays,
   subDays,
 } from 'date-fns';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, CalendarDays, Users, AlertCircle } from 'lucide-react';
 import { CalendarEvent, HouseholdMember, ViewMode } from '@/types';
 import { getEvents } from '@/lib/supabase';
 import EventModal from './EventModal';
@@ -65,11 +65,7 @@ export default function Calendar({ members, currentMember }: CalendarProps) {
   const days = eachDayOfInterval({ start: dateRange.start, end: dateRange.end });
   const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-  useEffect(() => {
-    loadEvents();
-  }, [currentDate, viewMode]);
-
-  async function loadEvents() {
+  const loadEvents = useCallback(async () => {
     setLoading(true);
     try {
       const start = format(dateRange.start, 'yyyy-MM-dd');
@@ -81,7 +77,11 @@ export default function Calendar({ members, currentMember }: CalendarProps) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [dateRange]);
+
+  useEffect(() => {
+    loadEvents();
+  }, [loadEvents]);
 
   function getEventsForDay(day: Date): CalendarEvent[] {
     return events.filter((event) => isSameDay(new Date(event.start_date), day));
@@ -316,24 +316,29 @@ export default function Calendar({ members, currentMember }: CalendarProps) {
     <div className="w-full max-w-6xl mx-auto p-4">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-        <div className="tape">
-          <h1 className="brutal-heading text-3xl sm:text-5xl tracking-tighter">
+        <div className="tape transition-transform hover:scale-[1.02] duration-200">
+          <h1 className="brutal-heading text-2xl sm:text-4xl lg:text-5xl tracking-tighter">
             {getHeaderTitle()}
           </h1>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 sm:gap-4">
           {/* View Mode Toggle */}
-          <div className="flex items-center border-4 border-ink">
-            {(['month', 'week', 'day'] as ViewMode[]).map((mode) => (
+          <div className="flex items-center border-4 border-ink bg-white">
+            {(['month', 'week', 'day'] as ViewMode[]).map((mode, index) => (
               <button
                 key={mode}
                 onClick={() => setViewMode(mode)}
-                className={`brutal-button !shadow-none !border-0 capitalize text-sm ${
-                  viewMode === mode ? 'bg-ink text-white' : 'bg-white'
-                } ${mode !== 'day' ? 'border-r-4 border-ink' : ''}`}
+                className={`brutal-button !shadow-none !border-0 capitalize text-sm transition-all ${
+                  viewMode === mode
+                    ? 'bg-ink text-white translate-x-[2px] translate-y-[2px]'
+                    : 'bg-white hover:bg-paper-gray'
+                } ${index < 2 ? 'border-r-4 border-ink' : ''}`}
               >
-                {mode}
+                <span className="flex items-center gap-1">
+                  {mode === 'month' && <CalendarDays className="w-4 h-4" />}
+                  {mode}
+                </span>
               </button>
             ))}
           </div>
@@ -375,34 +380,45 @@ export default function Calendar({ members, currentMember }: CalendarProps) {
       </div>
 
       {/* Member Legend */}
-      <div className="flex flex-wrap gap-4 mb-6">
-        {members.map((member) => (
-          <div key={member.id} className="flex items-center gap-2">
-            <div
-              className={`w-4 h-4 border-2 border-ink ${
-                member.color === 'member-1'
-                  ? 'bg-member-1'
-                  : member.color === 'member-2'
-                  ? 'bg-member-2'
-                  : 'bg-member-3'
-              }`}
-            />
-            <span className="text-sm font-bold uppercase">{member.name}</span>
+      {members.length > 0 ? (
+        <div className="flex flex-wrap items-center gap-4 mb-6 p-4 border-4 border-ink bg-paper-cream">
+          <div className="flex items-center gap-2 text-sm font-bold text-ink-gray">
+            <Users className="w-4 h-4" />
+            <span className="uppercase">Household:</span>
           </div>
-        ))}
-      </div>
+          {members.map((member) => (
+            <div key={member.id} className="flex items-center gap-2">
+              <div
+                className={`w-4 h-4 border-2 border-ink shadow-[1px_1px_0_#0a0a0a] ${
+                  member.color === 'member-1'
+                    ? 'bg-member-1'
+                    : member.color === 'member-2'
+                    ? 'bg-member-2'
+                    : 'bg-member-3'
+                }`}
+              />
+              <span className="text-sm font-bold uppercase">{member.name}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="flex items-center gap-3 p-4 mb-6 border-4 border-amber-500 bg-amber-50 text-amber-800">
+          <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <p className="text-sm font-bold">No household members found. Ask your admin to add members.</p>
+        </div>
+      )}
 
       {/* Calendar Content */}
       {loading ? (
-        <div className="flex justify-center py-12">
+        <div className="flex flex-col items-center justify-center py-16 border-4 border-ink bg-paper-cream min-h-[400px]">
           <LoadingSpinner size="lg" text="Loading events..." />
         </div>
       ) : (
-        <>
+        <div className="animate-in fade-in duration-300">
           {viewMode === 'month' && renderMonthView()}
           {viewMode === 'week' && renderWeekView()}
           {viewMode === 'day' && renderDayView()}
-        </>
+        </div>
       )}
 
       {/* Event Modal */}
