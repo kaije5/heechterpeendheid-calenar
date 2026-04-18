@@ -13,9 +13,10 @@ export default function LoadingSpinner({ size = 'md', text }: LoadingSpinnerProp
   };
 
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className="flex flex-col items-center gap-4" role="status" aria-label={text || 'Loading'}>
       <div
         className={`${sizeClasses[size]} border-ink border-t-transparent rounded-full animate-spin`}
+        aria-hidden="true"
       />
       {text && <p className="font-mono font-bold text-sm">{text}</p>}
     </div>
