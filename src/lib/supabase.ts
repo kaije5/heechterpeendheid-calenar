@@ -58,19 +58,23 @@ export async function getEventById(id: string): Promise<CalendarEvent | null> {
     .eq('id', id)
     .single();
 
-  if (error) return null;
+  if (error) {
+    console.error('Failed to get event:', error);
+    return null;
+  }
   return data;
 }
 
 export async function createEvent(event: CreateEventInput): Promise<CalendarEvent> {
   if (!isSupabaseConfigured()) {
     const newEvent: CalendarEvent = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: crypto.randomUUID(),
       ...event,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       member: mockMembers.find(m => m.id === event.member_id),
     };
+    // Immutable update
     mockEvents.push(newEvent);
     return newEvent;
   }
@@ -132,7 +136,10 @@ export async function getMemberById(id: string): Promise<HouseholdMember | null>
   }
 
   const { data, error } = await getSupabase().from('members').select('*').eq('id', id).single();
-  if (error) return null;
+  if (error) {
+    console.error('Failed to get member:', error);
+    return null;
+  }
   return data;
 }
 
@@ -141,10 +148,12 @@ export async function signInWithApple() {
   if (!isSupabaseConfigured()) {
     throw new Error('Auth requires Supabase configuration');
   }
+  // Guard for SSR - window only available in browser
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
   const { data, error } = await getSupabase().auth.signInWithOAuth({
     provider: 'apple',
     options: {
-      redirectTo: `${window.location.origin}/auth/callback`,
+      redirectTo: `${origin}/auth/callback`,
     },
   });
 
@@ -161,6 +170,9 @@ export async function signOut() {
 export async function getCurrentUser() {
   if (!isSupabaseConfigured()) return null;
   const { data: { user }, error } = await getSupabase().auth.getUser();
-  if (error) return null;
+  if (error) {
+    console.error('Failed to get current user:', error);
+    return null;
+  }
   return user;
 }

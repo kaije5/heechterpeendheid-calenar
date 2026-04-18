@@ -42,7 +42,7 @@ export default function EventModal({
       setMemberId(currentMember?.id || members[0]?.id || '');
       setIsAllDay(true);
     }
-  }, [event, members]);
+  }, [event, members, currentMember]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();

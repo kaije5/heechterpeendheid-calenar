@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Space_Mono } from "next/font/google";
+import Script from "next/script";
 import "./globals.css";
 
 const spaceMono = Space_Mono({
@@ -36,17 +37,15 @@ export default function RootLayout({
     <html lang="en" className={`${spaceMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-[#f5f3ef]">
         {children}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => {
-                  navigator.serviceWorker.register('/sw.js');
-                });
-              }
-            `,
-          }}
-        />
+        <Script id="register-sw" strategy="lazyOnload">
+          {`
+            if ('serviceWorker' in navigator) {
+              window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js');
+              });
+            }
+          `}
+        </Script>
       </body>
     </html>
   );

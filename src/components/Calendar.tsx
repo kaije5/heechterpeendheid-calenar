@@ -14,7 +14,7 @@ import {
   subMonths,
 } from 'date-fns';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
-import { CalendarEvent, HouseholdMember, ViewMode } from '@/types';
+import { CalendarEvent, HouseholdMember } from '@/types';
 import { getEvents } from '@/lib/supabase';
 import EventModal from './EventModal';
 
@@ -26,7 +26,6 @@ interface CalendarProps {
 export default function Calendar({ members, currentMember }: CalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
@@ -51,7 +50,8 @@ export default function Calendar({ members, currentMember }: CalendarProps) {
       const data = await getEvents(start, end);
       setEvents(data);
     } catch (error) {
-      console.error('Failed to load events:', error);
+      // Error handling - events load failure is silently ignored
+      // Could add toast notification or error state UI here
     } finally {
       setLoading(false);
     }

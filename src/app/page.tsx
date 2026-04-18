@@ -19,7 +19,7 @@ export default async function Home() {
         </div>
       </header>
 
-      <Calendar members={members} />
+      <Calendar members={members} currentMember={null} />
 
       <footer className="max-w-6xl mx-auto mt-16 pt-8 border-t-4 border-ink">
         <p className="text-sm font-bold text-center">
