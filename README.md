@@ -40,14 +40,29 @@ npm install
    ```
 4. Fill in your Supabase credentials
 
-### 3. Run Database Schema
+### 3. Run Database Migrations
 
-In Supabase SQL Editor, run the contents of `database/schema.sql`
+We use a custom migration system (no Supabase CLI required):
 
-This creates:
-- `members` table (3 default members)
-- `events` table with foreign key
-- Row Level Security policies
+```bash
+npm run migrate
+```
+
+This shows you the SQL to run. Copy it and paste into Supabase SQL Editor:
+
+1. Go to [Supabase Dashboard](https://app.supabase.com)
+2. Select your project
+3. Go to **SQL Editor** → **New Query**
+4. Paste contents of `supabase/migrations/001_initial_schema.sql`
+5. Click **Run**
+
+**Migration files:**
+- `supabase/migrations/001_initial_schema.sql` - Creates members/events tables
+
+**Creating new migrations:**
+1. Create file: `supabase/migrations/002_migration_name.sql`
+2. Add your SQL
+3. Run `npm run migrate` to see what needs applying
 
 ### 4. Run Development Server
 

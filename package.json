@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "migrate": "tsx supabase/migrate.ts",
+    "db:push": "echo 'Copy supabase/migrations/*.sql to Supabase SQL Editor'"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
