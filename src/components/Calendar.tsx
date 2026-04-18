@@ -17,6 +17,8 @@ import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { CalendarEvent, HouseholdMember } from '@/types';
 import { getEvents } from '@/lib/supabase';
 import EventModal from './EventModal';
+import LoadingSpinner from './LoadingSpinner';
+import Toast, { ToastType } from './Toast';
 
 interface CalendarProps {
   members: HouseholdMember[];
@@ -30,6 +32,7 @@ export default function Calendar({ members, currentMember }: CalendarProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
@@ -50,8 +53,7 @@ export default function Calendar({ members, currentMember }: CalendarProps) {
       const data = await getEvents(start, end);
       setEvents(data);
     } catch (error) {
-      // Error handling - events load failure is silently ignored
-      // Could add toast notification or error state UI here
+      setToast({ message: 'Failed to load events. Please try again.', type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -205,7 +207,9 @@ export default function Calendar({ members, currentMember }: CalendarProps) {
       </div>
 
       {loading && (
-        <div className="text-center py-8 font-bold">Loading...</div>
+        <div className="flex justify-center py-12">
+          <LoadingSpinner size="lg" text="Loading events..." />
+        </div>
       )}
 
       {/* Event Modal */}
@@ -217,6 +221,16 @@ export default function Calendar({ members, currentMember }: CalendarProps) {
           event={selectedEvent}
           members={members}
           currentMember={currentMember}
+          onToast={(message, type) => setToast({ message, type })}
+        />
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
         />
       )}
     </div>

@@ -13,6 +13,7 @@ interface EventModalProps {
   event: CalendarEvent | null;
   members: HouseholdMember[];
   currentMember: HouseholdMember | null;
+  onToast?: (message: string, type: 'success' | 'error' | 'info') => void;
 }
 
 export default function EventModal({
@@ -22,6 +23,7 @@ export default function EventModal({
   event,
   members,
   currentMember,
+  onToast,
 }: EventModalProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -62,13 +64,17 @@ export default function EventModal({
 
       if (event) {
         await updateEvent(event.id, eventData);
+        onToast?.('Event updated successfully', 'success');
       } else {
         await createEvent(eventData);
+        onToast?.('Event created successfully', 'success');
       }
 
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save event');
+      const message = err instanceof Error ? err.message : 'Failed to save event';
+      setError(message);
+      onToast?.(message, 'error');
     } finally {
       setLoading(false);
     }
@@ -80,9 +86,12 @@ export default function EventModal({
     setLoading(true);
     try {
       await deleteEvent(event.id);
+      onToast?.('Event deleted successfully', 'success');
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete event');
+      const message = err instanceof Error ? err.message : 'Failed to delete event';
+      setError(message);
+      onToast?.(message, 'error');
     } finally {
       setLoading(false);
     }
