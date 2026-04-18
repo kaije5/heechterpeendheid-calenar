@@ -7,14 +7,21 @@ import {
   endOfMonth,
   startOfWeek,
   endOfWeek,
+  startOfDay,
+  endOfDay,
   eachDayOfInterval,
   isSameMonth,
   isSameDay,
+  isToday,
   addMonths,
   subMonths,
+  addWeeks,
+  subWeeks,
+  addDays,
+  subDays,
 } from 'date-fns';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
-import { CalendarEvent, HouseholdMember } from '@/types';
+import { CalendarEvent, HouseholdMember, ViewMode } from '@/types';
 import { getEvents } from '@/lib/supabase';
 import EventModal from './EventModal';
 import LoadingSpinner from './LoadingSpinner';
@@ -27,6 +34,7 @@ interface CalendarProps {
 
 export default function Calendar({ members, currentMember }: CalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [viewMode, setViewMode] = useState<ViewMode>('month');
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -34,22 +42,38 @@ export default function Calendar({ members, currentMember }: CalendarProps) {
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
 
-  const monthStart = startOfMonth(currentDate);
-  const monthEnd = endOfMonth(currentDate);
-  const calendarStart = startOfWeek(monthStart, { weekStartsOn: 1 });
-  const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
-  const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+  // Calculate date range based on view mode
+  const getDateRange = () => {
+    switch (viewMode) {
+      case 'week':
+        const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+        const weekEnd = endOfWeek(currentDate, { weekStartsOn: 1 });
+        return { start: weekStart, end: weekEnd };
+      case 'day':
+        return { start: startOfDay(currentDate), end: endOfDay(currentDate) };
+      default: // month
+        const monthStart = startOfMonth(currentDate);
+        const monthEnd = endOfMonth(currentDate);
+        return {
+          start: startOfWeek(monthStart, { weekStartsOn: 1 }),
+          end: endOfWeek(monthEnd, { weekStartsOn: 1 }),
+        };
+    }
+  };
+
+  const dateRange = getDateRange();
+  const days = eachDayOfInterval({ start: dateRange.start, end: dateRange.end });
   const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
   useEffect(() => {
     loadEvents();
-  }, [currentDate]);
+  }, [currentDate, viewMode]);
 
   async function loadEvents() {
     setLoading(true);
     try {
-      const start = format(calendarStart, 'yyyy-MM-dd');
-      const end = format(calendarEnd, 'yyyy-MM-dd');
+      const start = format(dateRange.start, 'yyyy-MM-dd');
+      const end = format(dateRange.end, 'yyyy-MM-dd');
       const data = await getEvents(start, end);
       setEvents(data);
     } catch (error) {
@@ -63,12 +87,34 @@ export default function Calendar({ members, currentMember }: CalendarProps) {
     return events.filter((event) => isSameDay(new Date(event.start_date), day));
   }
 
-  function handlePrevMonth() {
-    setCurrentDate(subMonths(currentDate, 1));
+  function handlePrev() {
+    switch (viewMode) {
+      case 'week':
+        setCurrentDate(subWeeks(currentDate, 1));
+        break;
+      case 'day':
+        setCurrentDate(subDays(currentDate, 1));
+        break;
+      default:
+        setCurrentDate(subMonths(currentDate, 1));
+    }
   }
 
-  function handleNextMonth() {
-    setCurrentDate(addMonths(currentDate, 1));
+  function handleNext() {
+    switch (viewMode) {
+      case 'week':
+        setCurrentDate(addWeeks(currentDate, 1));
+        break;
+      case 'day':
+        setCurrentDate(addDays(currentDate, 1));
+        break;
+      default:
+        setCurrentDate(addMonths(currentDate, 1));
+    }
+  }
+
+  function handleToday() {
+    setCurrentDate(new Date());
   }
 
   function handleDayClick(day: Date) {
@@ -91,30 +137,226 @@ export default function Calendar({ members, currentMember }: CalendarProps) {
     loadEvents();
   }
 
+  function getHeaderTitle() {
+    switch (viewMode) {
+      case 'week':
+        return `${format(dateRange.start, 'MMM d')} - ${format(dateRange.end, 'MMM d, yyyy')}`;
+      case 'day':
+        return format(currentDate, 'EEEE, MMMM d, yyyy');
+      default:
+        return format(currentDate, 'MMMM yyyy');
+    }
+  }
+
+  function renderMonthView() {
+    return (
+      <>
+        {/* Week Days Header */}
+        <div className="calendar-grid mb-2">
+          {weekDays.map((day) => (
+            <div
+              key={day}
+              className="bg-ink text-white p-2 text-center font-bold text-sm uppercase"
+            >
+              {day}
+            </div>
+          ))}
+        </div>
+
+        {/* Calendar Grid */}
+        <div className="calendar-grid">
+          {days.map((day) => {
+            const dayEvents = getEventsForDay(day);
+            const today = isToday(day);
+            const currentMonth = isSameMonth(day, currentDate);
+
+            return (
+              <div
+                key={day.toISOString()}
+                onClick={() => handleDayClick(day)}
+                className={`calendar-day cursor-pointer ${today ? 'today' : ''} ${
+                  !currentMonth ? 'opacity-40' : ''
+                }`}
+              >
+                <span
+                  className={`inline-block w-7 h-7 text-center leading-7 font-bold text-sm ${
+                    today ? 'bg-ink text-white' : ''
+                  }`}
+                >
+                  {format(day, 'd')}
+                </span>
+
+                <div className="mt-1 space-y-1">
+                  {dayEvents.slice(0, 3).map((event) => (
+                    <button
+                      key={event.id}
+                      onClick={(e) => handleEventClick(event, e)}
+                      className={`event-chip ${event.member?.color || 'member-1'}`}
+                    >
+                      {event.title}
+                    </button>
+                  ))}
+                  {dayEvents.length > 3 && (
+                    <div className="text-xs font-bold text-ink-gray">
+                      +{dayEvents.length - 3} more
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </>
+    );
+  }
+
+  function renderWeekView() {
+    const weekDaysFull = days.slice(0, 7);
+
+    return (
+      <div className="overflow-x-auto">
+        <div className="min-w-[800px]">
+          {/* Week Days Header */}
+          <div className="grid grid-cols-7 gap-1 mb-2">
+            {weekDaysFull.map((day) => (
+              <div
+                key={day.toISOString()}
+                className={`text-center p-3 font-bold ${
+                  isToday(day) ? 'bg-ink text-white' : 'bg-gray-100'
+                }`}
+              >
+                <div className="text-sm uppercase">{format(day, 'EEE')}</div>
+                <div className="text-2xl">{format(day, 'd')}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Week Grid */}
+          <div className="grid grid-cols-7 gap-1">
+            {weekDaysFull.map((day) => {
+              const dayEvents = getEventsForDay(day);
+              return (
+                <div
+                  key={day.toISOString()}
+                  onClick={() => handleDayClick(day)}
+                  className="min-h-[200px] border-2 border-ink p-2 cursor-pointer hover:bg-gray-50"
+                >
+                  <div className="space-y-1">
+                    {dayEvents.map((event) => (
+                      <button
+                        key={event.id}
+                        onClick={(e) => handleEventClick(event, e)}
+                        className={`event-chip w-full text-left ${event.member?.color || 'member-1'}`}
+                      >
+                        {event.title}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  function renderDayView() {
+    const dayEvents = getEventsForDay(currentDate);
+
+    return (
+      <div className="max-w-2xl mx-auto">
+        <div className={`text-center p-4 mb-4 ${isToday(currentDate) ? 'bg-ink text-white' : 'bg-gray-100'}`}>
+          <h2 className="text-2xl font-bold">{format(currentDate, 'EEEE')}</h2>
+          <p className="text-xl">{format(currentDate, 'MMMM d, yyyy')}</p>
+        </div>
+
+        <div className="space-y-2">
+          {dayEvents.length === 0 ? (
+            <div className="text-center py-12 text-gray-500">
+              <p className="font-mono">No events scheduled</p>
+              <p className="text-sm mt-2">Click to add an event</p>
+            </div>
+          ) : (
+            dayEvents.map((event) => (
+              <button
+                key={event.id}
+                onClick={(e) => handleEventClick(event, e)}
+                className={`w-full text-left p-4 border-4 border-ink brutal-card hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all ${
+                  event.member?.color === 'member-1' ? 'bg-amber-200' :
+                  event.member?.color === 'member-2' ? 'bg-blue-200' :
+                  'bg-rose-200'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-lg">{event.title}</span>
+                  <span className="text-sm font-mono opacity-70">
+                    {event.member?.name}
+                  </span>
+                </div>
+                {event.description && (
+                  <p className="text-sm mt-2 opacity-80">{event.description}</p>
+                )}
+              </button>
+            ))
+          )}
+        </div>
+
+        <button
+          onClick={() => handleDayClick(currentDate)}
+          className="w-full mt-4 py-4 border-4 border-dashed border-ink text-ink font-bold hover:bg-ink hover:text-white transition-colors"
+        >
+          + Add Event
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-6xl mx-auto p-4">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div className="tape">
-          <h1 className="brutal-heading text-4xl sm:text-6xl tracking-tighter">
-            {format(currentDate, 'MMMM')}
+          <h1 className="brutal-heading text-3xl sm:text-5xl tracking-tighter">
+            {getHeaderTitle()}
           </h1>
-          <p className="text-xl font-bold mt-1">{format(currentDate, 'yyyy')}</p>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+          {/* View Mode Toggle */}
+          <div className="flex items-center border-4 border-ink">
+            {(['month', 'week', 'day'] as ViewMode[]).map((mode) => (
+              <button
+                key={mode}
+                onClick={() => setViewMode(mode)}
+                className={`brutal-button !shadow-none !border-0 capitalize text-sm ${
+                  viewMode === mode ? 'bg-ink text-white' : 'bg-white'
+                } ${mode !== 'day' ? 'border-r-4 border-ink' : ''}`}
+              >
+                {mode}
+              </button>
+            ))}
+          </div>
+
+          {/* Navigation */}
           <div className="flex items-center border-4 border-ink">
             <button
-              onClick={handlePrevMonth}
+              onClick={handlePrev}
               className="brutal-button !shadow-none !border-0 border-r-4 border-ink"
             >
-              <ChevronLeft className="w-6 h-6" />
+              <ChevronLeft className="w-5 h-5" />
             </button>
             <button
-              onClick={handleNextMonth}
+              onClick={handleToday}
+              className="brutal-button !shadow-none !border-0 border-r-4 border-ink text-sm px-3"
+            >
+              Today
+            </button>
+            <button
+              onClick={handleNext}
               className="brutal-button !shadow-none !border-0"
             >
-              <ChevronRight className="w-6 h-6" />
+              <ChevronRight className="w-5 h-5" />
             </button>
           </div>
 
@@ -127,7 +369,7 @@ export default function Calendar({ members, currentMember }: CalendarProps) {
             className="brutal-button flex items-center gap-2 bg-primary-yellow"
           >
             <Plus className="w-5 h-5" />
-            <span className="hidden sm:inline">Add Event</span>
+            <span className="hidden sm:inline">Add</span>
           </button>
         </div>
       </div>
@@ -150,66 +392,17 @@ export default function Calendar({ members, currentMember }: CalendarProps) {
         ))}
       </div>
 
-      {/* Week Days Header */}
-      <div className="calendar-grid mb-2">
-        {weekDays.map((day) => (
-          <div
-            key={day}
-            className="bg-ink text-white p-2 text-center font-bold text-sm uppercase"
-          >
-            {day}
-          </div>
-        ))}
-      </div>
-
-      {/* Calendar Grid */}
-      <div className="calendar-grid">
-        {days.map((day) => {
-          const dayEvents = getEventsForDay(day);
-          const isToday = isSameDay(day, new Date());
-          const isCurrentMonth = isSameMonth(day, currentDate);
-
-          return (
-            <div
-              key={day.toISOString()}
-              onClick={() => handleDayClick(day)}
-              className={`calendar-day cursor-pointer ${isToday ? 'today' : ''} ${
-                !isCurrentMonth ? 'opacity-40' : ''
-              }`}
-            >
-              <span
-                className={`inline-block w-7 h-7 text-center leading-7 font-bold text-sm ${
-                  isToday ? 'bg-ink text-white' : ''
-                }`}
-              >
-                {format(day, 'd')}
-              </span>
-
-              <div className="mt-1 space-y-1">
-                {dayEvents.slice(0, 3).map((event) => (
-                  <button
-                    key={event.id}
-                    onClick={(e) => handleEventClick(event, e)}
-                    className={`event-chip ${event.member?.color || 'member-1'}`}
-                  >
-                    {event.title}
-                  </button>
-                ))}
-                {dayEvents.length > 3 && (
-                  <div className="text-xs font-bold text-ink-gray">
-                    +{dayEvents.length - 3} more
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {loading && (
+      {/* Calendar Content */}
+      {loading ? (
         <div className="flex justify-center py-12">
           <LoadingSpinner size="lg" text="Loading events..." />
         </div>
+      ) : (
+        <>
+          {viewMode === 'month' && renderMonthView()}
+          {viewMode === 'week' && renderWeekView()}
+          {viewMode === 'day' && renderDayView()}
+        </>
       )}
 
       {/* Event Modal */}
