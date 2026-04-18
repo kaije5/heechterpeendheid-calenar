@@ -17,6 +17,9 @@ function getSupabase(): SupabaseClient {
   return supabaseInstance;
 }
 
+// Export singleton instance for direct access
+export const supabase = getSupabase();
+
 // Mock data for development without Supabase
 const mockMembers: HouseholdMember[] = [
   { id: '1', name: 'Member 1', email: 'm1@household.local', color: 'member-1', created_at: new Date().toISOString() },
@@ -175,4 +178,25 @@ export async function getCurrentUser() {
     return null;
   }
   return user;
+}
+
+export async function getCurrentMember(): Promise<HouseholdMember | null> {
+  if (!isSupabaseConfigured()) {
+    return null;
+  }
+
+  const user = await getCurrentUser();
+  if (!user) return null;
+
+  const { data, error } = await getSupabase()
+    .from('members')
+    .select('*')
+    .eq('id', user.id)
+    .single();
+
+  if (error) {
+    console.error('Failed to get current member:', error);
+    return null;
+  }
+  return data;
 }
