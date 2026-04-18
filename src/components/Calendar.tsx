@@ -26,6 +26,7 @@ import { getEvents } from '@/lib/supabase';
 import EventModal from './EventModal';
 import LoadingSpinner from './LoadingSpinner';
 import Toast, { ToastType } from './Toast';
+import { SyncStatusIndicator, SyncBadge } from './SyncStatusIndicator';
 
 interface CalendarProps {
   members: HouseholdMember[];
@@ -72,12 +73,12 @@ export default function Calendar({ members, currentMember }: CalendarProps) {
       const end = format(dateRange.end, 'yyyy-MM-dd');
       const data = await getEvents(start, end);
       setEvents(data);
-    } catch (error) {
+    } catch {
       setToast({ message: 'Failed to load events. Please try again.', type: 'error' });
     } finally {
       setLoading(false);
     }
-  }, [dateRange]);
+  }, [dateRange.start, dateRange.end]);
 
   useEffect(() => {
     loadEvents();
@@ -314,6 +315,7 @@ export default function Calendar({ members, currentMember }: CalendarProps) {
 
   return (
     <div className="w-full max-w-6xl mx-auto p-4">
+      <SyncStatusIndicator />
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div className="tape transition-transform hover:scale-[1.02] duration-200">
@@ -381,25 +383,28 @@ export default function Calendar({ members, currentMember }: CalendarProps) {
 
       {/* Member Legend */}
       {members.length > 0 ? (
-        <div className="flex flex-wrap items-center gap-4 mb-6 p-4 border-4 border-ink bg-paper-cream">
-          <div className="flex items-center gap-2 text-sm font-bold text-ink-gray">
-            <Users className="w-4 h-4" />
-            <span className="uppercase">Household:</span>
-          </div>
-          {members.map((member) => (
-            <div key={member.id} className="flex items-center gap-2">
-              <div
-                className={`w-4 h-4 border-2 border-ink shadow-[1px_1px_0_#0a0a0a] ${
-                  member.color === 'member-1'
-                    ? 'bg-member-1'
-                    : member.color === 'member-2'
-                    ? 'bg-member-2'
-                    : 'bg-member-3'
-                }`}
-              />
-              <span className="text-sm font-bold uppercase">{member.name}</span>
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-6 p-4 border-4 border-ink bg-paper-cream">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2 text-sm font-bold text-ink-gray">
+              <Users className="w-4 h-4" />
+              <span className="uppercase">Household:</span>
             </div>
-          ))}
+            {members.map((member) => (
+              <div key={member.id} className="flex items-center gap-2">
+                <div
+                  className={`w-4 h-4 border-2 border-ink shadow-[1px_1px_0_#0a0a0a] ${
+                    member.color === 'member-1'
+                      ? 'bg-member-1'
+                      : member.color === 'member-2'
+                      ? 'bg-member-2'
+                      : 'bg-member-3'
+                  }`}
+                />
+                <span className="text-sm font-bold uppercase">{member.name}</span>
+              </div>
+            ))}
+          </div>
+          <SyncBadge />
         </div>
       ) : (
         <div className="flex items-center gap-3 p-4 mb-6 border-4 border-amber-500 bg-amber-50 text-amber-800">
