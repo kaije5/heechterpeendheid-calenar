@@ -3,6 +3,11 @@ import { CalendarEvent, HouseholdMember } from '@/types';
 const DB_NAME = 'calenar-offline';
 const DB_VERSION = 1;
 
+interface CacheEntry<T> {
+  id: string;
+  data: T;
+}
+
 const STORES = {
   cache: 'cache',
   syncQueue: 'sync-queue',
@@ -41,10 +46,13 @@ export async function getCachedEvents(): Promise<CalendarEvent[]> {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORES.cache, 'readonly');
     const store = tx.objectStore(STORES.cache);
-    const request = store.getAll('events');
+    const request = store.get('events');
 
     request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve(request.result || []);
+    request.onsuccess = () => {
+      const result = request.result as CacheEntry<CalendarEvent[]> | undefined;
+      resolve(result?.id === 'events' ? result.data : []);
+    };
   });
 }
 
@@ -54,8 +62,9 @@ export async function cacheEvents(events: CalendarEvent[]): Promise<void> {
     const tx = db.transaction(STORES.cache, 'readwrite');
     const store = tx.objectStore(STORES.cache);
 
-    store.put({ id: 'events', ...events });
-    resolve();
+    tx.onerror = () => reject(tx.error);
+    store.put({ id: 'events', data: events });
+    tx.oncomplete = () => resolve();
   });
 }
 
@@ -66,10 +75,11 @@ export async function getCachedMembers(): Promise<HouseholdMember[]> {
     const store = tx.objectStore(STORES.cache);
     const request = store.get('members');
 
+    tx.onerror = () => reject(tx.error);
     request.onerror = () => reject(request.error);
     request.onsuccess = () => {
-      const result = request.result;
-      resolve(result ? result.members : []);
+      const result = request.result as CacheEntry<HouseholdMember[]> | undefined;
+      resolve(result?.id === 'members' ? result.data : []);
     };
   });
 }
@@ -79,8 +89,10 @@ export async function cacheMembers(members: HouseholdMember[]): Promise<void> {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORES.cache, 'readwrite');
     const store = tx.objectStore(STORES.cache);
-    store.put({ id: 'members', members });
-    resolve();
+
+    tx.onerror = () => reject(tx.error);
+    store.put({ id: 'members', data: members });
+    tx.oncomplete = () => resolve();
   });
 }
 
@@ -89,25 +101,25 @@ export async function updateCachedEvent(event: CalendarEvent): Promise<void> {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORES.cache, 'readwrite');
     const store = tx.objectStore(STORES.cache);
-    const getRequest = store.getAll('events');
+    const getRequest = store.get('events');
 
+    tx.onerror = () => reject(tx.error);
+    getRequest.onerror = () => reject(getRequest.error);
     getRequest.onsuccess = () => {
-      const events = getRequest.result as CalendarEvent[];
-      const index = events.findIndex((e) => e.id === event.id);
+      const stored = getRequest.result as CacheEntry<CalendarEvent[]> | undefined;
+      const events = stored?.id === 'events' ? [...stored.data] : [];
 
+      const index = events.findIndex((e) => e.id === event.id);
       if (index >= 0) {
         events[index] = event;
       } else {
         events.push(event);
       }
 
-      const putTx = db.transaction(STORES.cache, 'readwrite');
-      const putStore = putTx.objectStore(STORES.cache);
-      putStore.put({ id: 'events', ...events });
-      resolve();
+      const putRequest = store.put({ id: 'events', data: events });
+      putRequest.onsuccess = () => resolve();
+      putRequest.onerror = () => reject(putRequest.error);
     };
-
-    getRequest.onerror = () => reject(getRequest.error);
   });
 }
 
@@ -116,19 +128,20 @@ export async function removeCachedEvent(eventId: string): Promise<void> {
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORES.cache, 'readwrite');
     const store = tx.objectStore(STORES.cache);
-    const getRequest = store.getAll('events');
+    const getRequest = store.get('events');
 
+    tx.onerror = () => reject(tx.error);
+    getRequest.onerror = () => reject(getRequest.error);
     getRequest.onsuccess = () => {
-      const events = getRequest.result as CalendarEvent[];
+      const stored = getRequest.result as CacheEntry<CalendarEvent[]> | undefined;
+      const events = stored?.id === 'events' ? [...stored.data] : [];
+
       const filtered = events.filter((e) => e.id !== eventId);
 
-      const putTx = db.transaction(STORES.cache, 'readwrite');
-      const putStore = putTx.objectStore(STORES.cache);
-      putStore.put({ id: 'events', ...filtered });
-      resolve();
+      const putRequest = store.put({ id: 'events', data: filtered });
+      putRequest.onsuccess = () => resolve();
+      putRequest.onerror = () => reject(putRequest.error);
     };
-
-    getRequest.onerror = () => reject(getRequest.error);
   });
 }
 

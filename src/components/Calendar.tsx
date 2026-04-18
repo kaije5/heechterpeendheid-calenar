@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   format,
   startOfMonth,
@@ -66,30 +66,23 @@ export default function Calendar({ members, currentMember }: CalendarProps) {
   const days = eachDayOfInterval({ start: dateRange.start, end: dateRange.end });
   const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-  useEffect(() => {
-    let cancelled = false;
-    async function loadEvents() {
-      setLoading(true);
-      try {
-        const start = format(dateRange.start, 'yyyy-MM-dd');
-        const end = format(dateRange.end, 'yyyy-MM-dd');
-        const data = await getEvents(start, end);
-        if (!cancelled) {
-          setEvents(data);
-        }
-      } catch {
-        if (!cancelled) {
-          setToast({ message: 'Failed to load events. Please try again.', type: 'error' });
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
+  const loadEvents = useCallback(async () => {
+    setLoading(true);
+    try {
+      const start = format(dateRange.start, 'yyyy-MM-dd');
+      const end = format(dateRange.end, 'yyyy-MM-dd');
+      const data = await getEvents(start, end);
+      setEvents(data);
+    } catch {
+      setToast({ message: 'Failed to load events. Please try again.', type: 'error' });
+    } finally {
+      setLoading(false);
     }
-    loadEvents();
-    return () => { cancelled = true; };
   }, [dateRange.start, dateRange.end]);
+
+  useEffect(() => {
+    loadEvents();
+  }, [loadEvents]);
 
   function getEventsForDay(day: Date): CalendarEvent[] {
     return events.filter((event) => isSameDay(new Date(event.start_date), day));

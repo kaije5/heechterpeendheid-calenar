@@ -36,7 +36,7 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  if (url.hostname.includes('supabase.co')) {
+  if (url.hostname === 'supabase.co' || url.hostname.endsWith('.supabase.co')) {
     event.respondWith(networkFirst(request));
     return;
   }

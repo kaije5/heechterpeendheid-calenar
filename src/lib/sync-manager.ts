@@ -49,7 +49,9 @@ async function applyMutation(mutation: {
         break;
 
       case 'update': {
-        const { eventId, ...updateData } = mutation.payload as unknown as {
+        const payload = mutation.payload as Record<string, unknown>;
+        if (typeof payload.eventId !== 'string') return false;
+        const { eventId, ...updateData } = payload as unknown as {
           eventId: string;
         } & UpdateEventInput;
         await updateEventDb(eventId, updateData);
