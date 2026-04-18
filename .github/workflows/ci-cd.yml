@@ -63,16 +63,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        browser: [chromium, firefox, webkit]
-        node: [20, 22]
-        include:
-          - browser: mobile-chrome
-            node: 22
+        browser: [chromium, firefox, webkit, mobile-chrome]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node }}
+          node-version: 22
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps ${{ matrix.browser }}
@@ -82,7 +78,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: playwright-report-${{ matrix.browser }}-node${{ matrix.node }}
+          name: playwright-report-${{ matrix.browser }}
           path: playwright-report/
           retention-days: 30
 
