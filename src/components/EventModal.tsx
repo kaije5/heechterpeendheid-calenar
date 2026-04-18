@@ -12,6 +12,7 @@ interface EventModalProps {
   selectedDate: Date | null;
   event: CalendarEvent | null;
   members: HouseholdMember[];
+  currentMember: HouseholdMember | null;
 }
 
 export default function EventModal({
@@ -20,6 +21,7 @@ export default function EventModal({
   selectedDate,
   event,
   members,
+  currentMember,
 }: EventModalProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -37,7 +39,7 @@ export default function EventModal({
     } else {
       setTitle('');
       setDescription('');
-      setMemberId(members[0]?.id || '');
+      setMemberId(currentMember?.id || members[0]?.id || '');
       setIsAllDay(true);
     }
   }, [event, members]);

@@ -20,9 +20,10 @@ import EventModal from './EventModal';
 
 interface CalendarProps {
   members: HouseholdMember[];
+  currentMember: HouseholdMember | null;
 }
 
-export default function Calendar({ members }: CalendarProps) {
+export default function Calendar({ members, currentMember }: CalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('month');
@@ -215,6 +216,7 @@ export default function Calendar({ members }: CalendarProps) {
           selectedDate={selectedDate}
           event={selectedEvent}
           members={members}
+          currentMember={currentMember}
         />
       )}
     </div>
