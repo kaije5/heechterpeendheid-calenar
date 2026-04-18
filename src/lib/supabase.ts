@@ -147,17 +147,29 @@ export async function getMemberById(id: string): Promise<HouseholdMember | null>
 }
 
 // Auth
-export async function signInWithApple() {
+export async function signInWithEmail(email: string) {
   if (!isSupabaseConfigured()) {
     throw new Error('Auth requires Supabase configuration');
   }
-  // Guard for SSR - window only available in browser
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
-  const { data, error } = await getSupabase().auth.signInWithOAuth({
-    provider: 'apple',
+  const { data, error } = await getSupabase().auth.signInWithOtp({
+    email,
     options: {
-      redirectTo: `${origin}/auth/callback`,
+      emailRedirectTo: `${origin}/auth/callback`,
     },
+  });
+
+  if (error) throw error;
+  return data;
+}
+
+export async function signUpWithEmail(email: string, password: string) {
+  if (!isSupabaseConfigured()) {
+    throw new Error('Auth requires Supabase configuration');
+  }
+  const { data, error } = await getSupabase().auth.signUp({
+    email,
+    password,
   });
 
   if (error) throw error;
