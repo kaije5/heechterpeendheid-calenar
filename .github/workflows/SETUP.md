@@ -6,16 +6,15 @@ Complete pipeline runs on every push to main:
 
 ```
 PR:     lint → test
-MAIN:   lint → test → build → e2e → migrate → deploy
+MAIN:   lint → test → e2e → migrate → deploy
 ```
 
 ### Stages:
 1. **Lint** - ESLint checks (PR + main)
 2. **Test** - Jest unit tests with coverage (PR + main)
-3. **Build** - Docker image → GitHub Container Registry (main only)
-4. **E2E** - Playwright matrix (chromium, firefox, webkit, mobile-chrome) (main only)
-5. **Migrate** - Supabase database migrations (main only)
-6. **Deploy** - Vercel production deployment (main only)
+3. **E2E** - Playwright matrix (chromium, firefox, webkit, mobile-chrome) (main only)
+4. **Migrate** - Supabase database migrations (main only)
+5. **Deploy** - Vercel builds and deploys (main only)
 
 ### Required GitHub Secrets
 
@@ -26,12 +25,6 @@ MAIN:   lint → test → build → e2e → migrate → deploy
 | `VERCEL_PROJECT_ID` | Vercel Project Settings > General > Project ID |
 | `SUPABASE_ACCESS_TOKEN` | Supabase Dashboard > Account > Access Tokens |
 | `SUPABASE_PROJECT_ID` | From Supabase project URL |
-
-### Docker Image
-
-Built images are pushed to GitHub Container Registry:
-- `ghcr.io/kaije5/heechterpeendheid-calenar:latest`
-- `ghcr.io/kaije5/heechterpeendheid-calenar:<sha>`
 
 ## Database Migrations
 
