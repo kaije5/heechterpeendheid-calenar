@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useLayoutEffect, useState } from 'react';
 import { X, CheckCircle, AlertCircle, Info } from 'lucide-react';
 
 export type ToastType = 'success' | 'error' | 'info';
@@ -15,8 +15,7 @@ interface ToastProps {
 export default function Toast({ message, type, onClose, duration = 5000 }: ToastProps) {
   const [isVisible, setIsVisible] = useState(false);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
+  useLayoutEffect(() => {
     setIsVisible(true);
     const timer = setTimeout(() => {
       setIsVisible(false);
