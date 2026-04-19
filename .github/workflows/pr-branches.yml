@@ -1,0 +1,97 @@
+name: Feature/Fix Branch CI
+
+on:
+  push:
+    branches:
+      - 'feature/**'
+      - 'fix/**'
+      - 'hotfix/**'
+      - 'refactor/**'
+  pull_request:
+    branches:
+      - 'feature/**'
+      - 'fix/**'
+      - 'hotfix/**'
+      - 'refactor/**'
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run test:coverage
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report-${{ github.ref_name }}
+          path: coverage/
+          retention-days: 14
+
+  e2e:
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    if: github.ref_name != 'main'
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps ${{ matrix.browser }}
+      - run: npx playwright test --project=${{ matrix.browser }}
+        env:
+          BASE_URL: http://localhost:3000
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-${{ github.ref_name }}-${{ matrix.browser }}
+          path: playwright-report/
+          retention-days: 14
+
+  e2e-status:
+    needs: e2e
+    runs-on: ubuntu-latest
+    if: github.ref_name != 'main'
+    steps:
+      - run: echo "E2E matrix jobs passed for ${{ github.ref_name }}"
+
+  build:
+    needs: e2e-status
+    runs-on: ubuntu-latest
+    if: github.ref_name != 'main'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+
+  status:
+    needs: [build, test]
+    runs-on: ubuntu-latest
+    if: github.ref_name != 'main'
+    steps:
+      - run: echo "All checks passed for ${{ github.ref_name }}"
