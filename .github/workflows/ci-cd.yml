@@ -41,7 +41,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: coverage-${{ github.ref_name }}
+          name: coverage-${{ replace(replace(github.ref_name, '/', '-'), 'refs/heads/', '') }}
           path: coverage/
           retention-days: 14
 
@@ -66,7 +66,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: playwright-${{ github.ref_name }}-${{ matrix.browser }}
+          name: playwright-${{ replace(replace(github.ref_name, '/', '-'), 'refs/heads/', '') }}-${{ matrix.browser }}
           path: playwright-report/
           retention-days: 14
 
