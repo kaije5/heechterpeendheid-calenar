@@ -50,6 +50,7 @@ jobs:
   e2e:
     needs: [lint, test]
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
     strategy:
       fail-fast: false
       matrix:
@@ -80,7 +81,7 @@ jobs:
           if-no-files-found: warn
 
   build:
-    needs: e2e
+    needs: [lint, test]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
