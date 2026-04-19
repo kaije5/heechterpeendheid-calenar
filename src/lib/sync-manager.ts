@@ -16,7 +16,12 @@ function getOnlineStatus(): boolean {
   return isOnline;
 }
 
-function setupOnlineListener(onStatusChange: (online: boolean) => void): () => void {
+// Exported for testing only
+export function _resetOnlineStatus(value: boolean): void {
+  isOnline = value;
+}
+
+export function setupOnlineListener(onStatusChange: (online: boolean) => void): () => void {
   if (typeof window === 'undefined') return () => {};
 
   const handleOnline = () => {

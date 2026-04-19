@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import {
   format,
   startOfMonth,
@@ -42,12 +42,6 @@ export default function Calendar({ members, currentMember }: CalendarProps) {
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<{ message: string; type: ToastType } | null>(null);
-  const [mounted, setMounted] = useState(false);
-
-  // Animate in after mount for better perceived performance
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // Calculate date range based on view mode
   const getDateRange = () => {
@@ -72,23 +66,36 @@ export default function Calendar({ members, currentMember }: CalendarProps) {
   const days = eachDayOfInterval({ start: dateRange.start, end: dateRange.end });
   const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-  const loadEvents = useCallback(async () => {
-    setLoading(true);
-    try {
+  // Load events when date range changes
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = () => {
+      if (cancelled) return;
+      setLoading(true);
       const start = format(dateRange.start, 'yyyy-MM-dd');
       const end = format(dateRange.end, 'yyyy-MM-dd');
-      const data = await getEvents(start, end);
-      setEvents(data);
-    } catch {
-      setToast({ message: 'Failed to load events. Please try again.', type: 'error' });
-    } finally {
-      setLoading(false);
-    }
-  }, [dateRange.start, dateRange.end]);
+      getEvents(start, end)
+        .then((data) => {
+          if (!cancelled) {
+            setEvents(data);
+            setLoading(false);
+          }
+        })
+        .catch(() => {
+          if (!cancelled) {
+            setToast({ message: 'Failed to load events. Please try again.', type: 'error' });
+            setLoading(false);
+          }
+        });
+    };
 
-  useEffect(() => {
-    loadEvents();
-  }, [loadEvents]);
+    const rafId = requestAnimationFrame(load);
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(rafId);
+    };
+  }, [currentDate, viewMode]);
 
   function getEventsForDay(day: Date): CalendarEvent[] {
     return events.filter((event) => isSameDay(new Date(event.start_date), day));
@@ -141,7 +148,7 @@ export default function Calendar({ members, currentMember }: CalendarProps) {
     setIsModalOpen(false);
     setSelectedEvent(null);
     setSelectedDate(null);
-    loadEvents();
+    setCurrentDate(new Date());
   }
 
   function getHeaderTitle() {
@@ -320,7 +327,7 @@ export default function Calendar({ members, currentMember }: CalendarProps) {
   }
 
   return (
-    <div className={`w-full max-w-6xl mx-auto p-4 transition-opacity duration-300 ${mounted ? 'opacity-100' : 'opacity-0'}`}>
+    <div className="w-full max-w-6xl mx-auto p-4 transition-opacity duration-300 opacity-100">
       <SyncStatusIndicator />
       
       {/* Header */}

@@ -22,7 +22,6 @@ const config: Config = {
     '!src/**/*.d.ts',
     '!src/mcp/**',
     '!src/app/**',
-    '!src/lib/supabase.ts',
     '!src/components/Calendar.tsx',
     '!src/components/EventModal.tsx',
     '!src/components/AuthButton.tsx',

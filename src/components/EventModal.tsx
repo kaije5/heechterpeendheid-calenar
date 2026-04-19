@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { format } from 'date-fns';
 import { X, Trash2, Loader2, CalendarDays, Clock, User, AlignLeft } from 'lucide-react';
 import { CalendarEvent, HouseholdMember } from '@/types';
@@ -35,13 +35,15 @@ export default function EventModal({
   const titleInputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  // Sync state when event/modal changes
+  useLayoutEffect(() => {
     if (event) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTitle(event.title);
       setDescription(event.description || '');
       setMemberId(event.member_id);
       setIsAllDay(event.is_all_day);
-    } else {
+    } else if (isOpen) {
       setTitle('');
       setDescription('');
       setMemberId(currentMember?.id || members[0]?.id || '');
@@ -49,8 +51,7 @@ export default function EventModal({
     }
     setError('');
     setDirty(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [event, members, currentMember?.id, isOpen]);
+  }, [event, isOpen, members, currentMember]);
 
   useEffect(() => {
     if (isOpen && titleInputRef.current) {
