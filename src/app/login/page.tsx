@@ -13,6 +13,8 @@ function LoginPageContent() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  const router = useRouter();
+
   useEffect(() => {
     // Check if user is already authenticated
     const checkAuth = async () => {
@@ -22,9 +24,7 @@ function LoginPageContent() {
       }
     };
     checkAuth();
-  }, [redirect]);
-
-  const router = useRouter();
+  }, [redirect, router]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -34,8 +34,9 @@ function LoginPageContent() {
     try {
       await signIn(email.trim(), password);
       router.push(redirect);
-    } catch (err: any) {
-      setError(err.message || 'Login failed. Please check your credentials.');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Login failed. Please check your credentials.';
+      setError(message);
     } finally {
       setLoading(false);
     }

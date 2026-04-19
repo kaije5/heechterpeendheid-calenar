@@ -10,19 +10,21 @@ interface ProtectedRouteProps {
 }
 
 function ProtectedRouteContent({ children }: ProtectedRouteProps) {
-  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
     async function checkAuth() {
-      const currentUser = await getCurrentUser();
-      if (!currentUser) {
+      try {
+        const currentUser = await getCurrentUser();
+        if (!currentUser) {
+          router.push('/login?redirect=/');
+          return;
+        }
+        setLoading(false);
+      } catch {
         router.push('/login?redirect=/');
-        return;
       }
-      setUser(currentUser);
-      setLoading(false);
     }
     checkAuth();
   }, [router]);

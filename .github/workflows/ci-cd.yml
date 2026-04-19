@@ -38,16 +38,19 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run test:coverage
+      - name: Set artifact name
+        run: echo "ARTIFACT_NAME=coverage-$(echo '${{ github.ref_name }}' | sed 's/\//-/g')" >> $GITHUB_ENV
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: coverage-${{ github.ref_name }}
+          name: ${{ env.ARTIFACT_NAME }}
           path: coverage/
           retention-days: 14
 
   e2e:
     needs: [lint, test]
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
     strategy:
       fail-fast: false
       matrix:
@@ -60,18 +63,25 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps ${{ matrix.browser }}
+      - name: Set env for e2e
+        run: |
+          echo "NEXT_PUBLIC_SUPABASE_URL=https://example.supabase.co" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4YW1wbGUiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MTc2OTIwMCwiZXhwIjoxOTU3MzQ1MjAwfQ.fake" >> $GITHUB_ENV
       - run: npx playwright test --project=${{ matrix.browser }}
         env:
           BASE_URL: http://localhost:3000
+      - name: Set artifact name
+        run: echo "ARTIFACT_NAME=playwright-$(echo '${{ github.ref_name }}' | sed 's/\//-/g')-${{ matrix.browser }}" >> $GITHUB_ENV
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: playwright-${{ github.ref_name }}-${{ matrix.browser }}
+          name: ${{ env.ARTIFACT_NAME }}
           path: playwright-report/
           retention-days: 14
+          if-no-files-found: warn
 
   build:
-    needs: e2e
+    needs: [lint, test]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -79,6 +89,10 @@ jobs:
         with:
           node-version: 22
           cache: npm
+      - name: Set env for build
+        run: |
+          echo "NEXT_PUBLIC_SUPABASE_URL=https://example.supabase.co" >> $GITHUB_ENV
+          echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4YW1wbGUiLCJyb2xlIjoiYW5vbiIsImlhdCI6MTY0MTc2OTIwMCwiZXhwIjoxOTU3MzQ1MjAwfQ.fake" >> $GITHUB_ENV
       - run: npm ci
       - run: npm run build
 

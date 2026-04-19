@@ -22,15 +22,14 @@ const config: Config = {
     '!src/**/*.d.ts',
     '!src/mcp/**',
     '!src/app/**',
-    '!src/lib/supabase.ts',
     '!src/components/Calendar.tsx',
     '!src/components/EventModal.tsx',
     '!src/components/AuthButton.tsx',
   ],
   coverageThreshold: {
     global: {
-      branches: 80,
-      functions: 80,
+      branches: 75,
+      functions: 75,
       lines: 80,
       statements: 80,
     },

@@ -1,6 +1,6 @@
 'use client';
 
-import { useLayoutEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { X, CheckCircle, AlertCircle, Info } from 'lucide-react';
 
 export type ToastType = 'success' | 'error' | 'info';
@@ -13,16 +13,16 @@ interface ToastProps {
 }
 
 export default function Toast({ message, type, onClose, duration = 5000 }: ToastProps) {
-  const [isVisible, setIsVisible] = useState(false);
+  const [show, setShow] = useState(true);
 
-  useLayoutEffect(() => {
-    setIsVisible(true);
-    const timer = setTimeout(() => {
-      setIsVisible(false);
-      setTimeout(onClose, 300);
-    }, duration);
+  useEffect(() => {
+    const hideTimer = setTimeout(() => setShow(false), duration - 300);
+    const closeTimer = setTimeout(onClose, duration);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(hideTimer);
+      clearTimeout(closeTimer);
+    };
   }, [duration, onClose]);
 
   const icons = {
@@ -40,7 +40,7 @@ export default function Toast({ message, type, onClose, duration = 5000 }: Toast
   return (
     <div
       className={`fixed bottom-4 right-4 z-50 transition-all duration-300 ${
-        isVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
+        show ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full'
       }`}
     >
       <div className={`brutal-card ${colors[type]} text-white flex items-center gap-3 pr-2`}>
