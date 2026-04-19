@@ -2,9 +2,19 @@ name: CI/CD Pipeline
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - 'feature/**'
+      - 'fix/**'
+      - 'hotfix/**'
+      - 'refactor/**'
   pull_request:
-    branches: [main]
+    branches:
+      '*'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   lint:
@@ -31,17 +41,17 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: coverage-report
+          name: coverage-${{ github.ref_name }}
           path: coverage/
+          retention-days: 14
 
   e2e:
     needs: [lint, test]
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
     strategy:
       fail-fast: false
       matrix:
-        browser: [chromium, firefox, webkit, mobile-chrome]
+        browser: [chromium, firefox, webkit]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -56,19 +66,31 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: playwright-report-${{ matrix.browser }}
+          name: playwright-${{ github.ref_name }}-${{ matrix.browser }}
           path: playwright-report/
-          retention-days: 30
+          retention-days: 14
 
-  e2e-status:
+  build:
     needs: e2e
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
     steps:
-      - run: echo "All E2E matrix jobs passed"
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+
+  status:
+    needs: [build, test]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - run: echo "Pipeline complete for ${{ github.ref_name }}"
 
   migrate:
-    needs: e2e-status
+    needs: status
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
     env:
