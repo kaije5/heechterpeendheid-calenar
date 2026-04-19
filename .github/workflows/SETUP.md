@@ -56,7 +56,7 @@ Since tables don't exist yet, manually run the migration:
 
 1. Go to https://app.supabase.io/project/sgbzmsuvqqwvwejghppv
 2. Open **SQL Editor**
-3. Paste contents of `supabase/migrations/001_initial_schema.sql`
+3. Paste contents of `supabase/migrations/20260419000000_initial_schema.sql`
 4. Click **Run**
 
 After this, GitHub Actions will handle future migrations automatically.

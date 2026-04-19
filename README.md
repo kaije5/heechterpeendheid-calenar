@@ -53,11 +53,11 @@ This shows you the SQL to run. Copy it and paste into Supabase SQL Editor:
 1. Go to [Supabase Dashboard](https://app.supabase.com)
 2. Select your project
 3. Go to **SQL Editor** → **New Query**
-4. Paste contents of `supabase/migrations/001_initial_schema.sql`
+4. Paste contents of `supabase/migrations/20260419000000_initial_schema.sql`
 5. Click **Run**
 
 **Migration files:**
-- `supabase/migrations/001_initial_schema.sql` - Creates members/events tables
+- `supabase/migrations/20260419000000_initial_schema.sql` - Creates members/events tables
 
 **Creating new migrations:**
 1. Create file: `supabase/migrations/002_migration_name.sql`

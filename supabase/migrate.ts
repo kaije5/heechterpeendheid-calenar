@@ -39,7 +39,7 @@ async function runMigrations() {
   console.log('1. Go to https://app.supabase.com');
   console.log('2. Select your project');
   console.log('3. Go to SQL Editor → New Query');
-  console.log('4. Paste the SQL from: supabase/migrations/001_initial_schema.sql');
+  console.log('4. Paste the SQL from: supabase/migrations/20260419000000_initial_schema.sql');
   console.log('5. Click Run\n');
 }
 

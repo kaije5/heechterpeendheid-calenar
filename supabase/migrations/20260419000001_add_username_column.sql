@@ -1,4 +1,4 @@
--- Migration: 002_add_username_column
+-- Migration: add_username_column
 -- Add username column to members table and update auth function
 
 -- Add username column to members table
@@ -7,14 +7,11 @@ ALTER TABLE members ADD COLUMN IF NOT EXISTS username TEXT UNIQUE NOT NULL DEFAU
 -- Update existing rows to have username from email (before @)
 UPDATE members SET username = split_part(email, '@', 1) WHERE username = '';
 
--- Make username non-nullable after populating
-ALTER TABLE members ALTER COLUMN username SET NOT NULL;
-
 -- Remove the default now that it's populated
 ALTER TABLE members ALTER COLUMN username DROP DEFAULT;
 
 -- Function to auto-create member on auth signup (updated for username)
-CREATE OR REPLACE FUNCTION public.handle_new_user()
+CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS TRIGGER AS $$
 DECLARE
   assigned_color TEXT;
@@ -39,7 +36,7 @@ BEGIN
   );
 
   -- Insert new member with both username and email
-  INSERT INTO public.members (id, username, name, email, color)
+  INSERT INTO members (id, username, name, email, color)
   VALUES (
     NEW.id,
     COALESCE(NEW.raw_user_meta_data->>'username', split_part(NEW.email, '@', 1)),

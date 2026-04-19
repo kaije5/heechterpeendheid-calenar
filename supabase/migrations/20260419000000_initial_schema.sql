@@ -1,8 +1,12 @@
--- Migration: 001_initial_schema
+-- Migration: initial_schema
 -- Create members and events tables with auth integration
 
--- Enable UUID extension
+-- Enable required extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- Ensure schema is set for security definer functions
+SET search_path = public;
 
 -- Members table - linked to auth.users
 CREATE TABLE IF NOT EXISTS members (
@@ -68,7 +72,7 @@ CREATE TRIGGER update_events_updated_at
   EXECUTE FUNCTION update_updated_at_column();
 
 -- Function to auto-create member on auth signup
-CREATE OR REPLACE FUNCTION public.handle_new_user()
+CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS TRIGGER AS $$
 DECLARE
   assigned_color TEXT;
@@ -85,7 +89,7 @@ BEGIN
   END CASE;
 
   -- Insert new member
-  INSERT INTO public.members (id, name, email, color)
+  INSERT INTO members (id, name, email, color)
   VALUES (
     NEW.id,
     COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name', 'New Member'),
@@ -101,4 +105,4 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+  FOR EACH ROW EXECUTE FUNCTION handle_new_user();
